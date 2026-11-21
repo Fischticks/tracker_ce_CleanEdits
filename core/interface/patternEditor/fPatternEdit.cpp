@@ -1354,6 +1354,17 @@ void cPatternEditor::changeActualPatternLengthByDefinedValues(int16_t dir)
 
 void cPatternEditor::setActualPatternLength(int16_t value)
 {
+    applyActualPatternLength(value);
+
+    showLength();
+
+    refreshPattern();
+}
+
+// Everything setActualPatternLength() does except redrawing the editor. Safe to call while another screen
+// (e.g. Shift + Pattern, MOD_PATTERN_SETTINGS) is active; the editor re-reads the length when it is opened.
+void cPatternEditor::applyActualPatternLength(int16_t value)
+{
     Sequencer::strPattern* pattern = sequencer.getPatternToUI();
 
     pattern->track[0].length = clamp<int>(value, 0, Sequencer::MAXSTEP);
@@ -1365,10 +1376,6 @@ void cPatternEditor::setActualPatternLength(int16_t value)
 
     if (trackerPattern.actualStep > trackerPattern.patternLength - 1)
         trackerPattern.actualStep = trackerPattern.patternLength - 1;
-
-    showLength();
-
-    refreshPattern();
 
     newFileManager.setActualPatternStructChanged();
 }
@@ -2868,6 +2875,15 @@ static void functPattern(uint8_t state)
         {
             return;
         }
+
+#ifdef MOD_PATTERN_SETTINGS
+        // Shift + Pattern opens the Shift + Pattern screen
+        if (PTE->buttons->isButtonPressed(interfaceButtonShift))
+        {
+            PTE->eventFunct(eventActivateShiftPattern, PTE, 0, 0);
+            return;
+        }
+#endif
 
         PTE->cancelPopups();
     }

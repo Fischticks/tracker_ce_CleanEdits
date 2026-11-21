@@ -74,6 +74,7 @@ class cPatternEditor : public ModuleBase
     void changeActualPatternLength(int16_t value);
     void changeActualPatternLengthByDefinedValues(int16_t value);
     void setActualPatternLength(int16_t value);
+    void applyActualPatternLength(int16_t value); // setActualPatternLength() without the redraw
     void changeActualPatternEditStep(int16_t value);
     void changeActualPatternEditStepByDefinedValues(int16_t value);
     void setActualPatternEditStep(int16_t value);

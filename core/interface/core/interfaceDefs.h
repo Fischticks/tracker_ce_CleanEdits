@@ -270,6 +270,9 @@ enum interfaceEvents
 
     eventActivateImageViewer,
     eventActivateGameModule,
+#ifdef MOD_PATTERN_SETTINGS
+    eventActivateShiftPattern,
+#endif
 
     eventSetFileTransferMode,
 
