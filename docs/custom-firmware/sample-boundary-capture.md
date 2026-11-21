@@ -1,5 +1,7 @@
 # Sample Playback Boundary Capture — `MOD_SAMPLE_BOUNDARY_CAPTURE`
 
+> **Default build:** `MOD_SAMPLE_BOUNDARY_CAPTURE` is enabled by default for Original Tracker, Tracker+ and Tracker Mini through the root `custom-firmware.mk`. See [the custom firmware overview](README.md) for configuration and temporary overrides.
+
 ## Source files
 
 **New (feature-specific; every file is wholly guarded and compiles to nothing without the flag):**
