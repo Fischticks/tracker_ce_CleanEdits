@@ -56,9 +56,12 @@ write the same state, so a change made in either place shows up in the other.
 
 ## Build and dependencies
 
+Definition: `MOD_PATTERN_SETTINGS`. Whether it is part of the default firmware is set in `custom-firmware.mk` (see
+[README.md](README.md)); this document does not repeat the default. Temporary combinations (run `make clean` first; an override
+replaces the whole default list for that build):
 ```
-make plus CUSTOM_DEFINES="-DMOD_PATTERN_SETTINGS"                          # Length + Divider
-make plus CUSTOM_DEFINES="-DMOD_PATTERN_SETTINGS -DMOD_PATTERN_BPM"        # + BPM slider (pattern file v8)
+make clean && make plus CUSTOM_DEFINES="-DMOD_PATTERN_SETTINGS"                          # Length + Divider
+make clean && make plus CUSTOM_DEFINES="-DMOD_PATTERN_SETTINGS -DMOD_PATTERN_BPM"        # + BPM slider (pattern file v8)
 ```
 
 - `MOD_PATTERN_SETTINGS` is independent. The BPM slider exists only when `MOD_PATTERN_BPM` is also defined; the engine does
