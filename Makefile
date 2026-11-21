@@ -17,6 +17,12 @@ OUT_DIR       := $(ROOT_DIR)/build
 
 include $(ROOT_DIR)/version.mk
 
+# Optional custom firmware features: default CUSTOM_DEFINES live in custom-firmware.mk (a command-line
+# CUSTOM_DEFINES=... overrides them). Exported so every recursive build (core, platform, synth) receives the
+# same definitions; make does not pass variables defined inside a makefile to sub-makes on its own.
+-include $(ROOT_DIR)/custom-firmware.mk
+export CUSTOM_DEFINES
+
 ORIGINAL_POSTFIX ?= $(EDITION_NAME)_$(ORIGINAL_VER_MAJOR).$(ORIGINAL_VER_MINOR).$(ORIGINAL_VER_PATCH)
 PLUS_POSTFIX     ?= $(EDITION_NAME)_$(PLUS_VER_MAJOR).$(PLUS_VER_MINOR).$(PLUS_VER_PATCH)
 MINI_POSTFIX     ?= $(EDITION_NAME)_$(MINI_VER_MAJOR).$(MINI_VER_MINOR).$(MINI_VER_PATCH)
