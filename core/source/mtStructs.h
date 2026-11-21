@@ -42,7 +42,13 @@ const char firmwareVersionLabelFormatBeta[] = "%d.%d.%d " FW_EDITION_NAME " beta
 
 const uint8_t PROJECT_FILE_VERSION = 17;   // wersja struktury pliku projektu
 const uint8_t INSTRUMENT_FILE_VERSION = 9; // wersja struktury pliku instrumentu
+#ifdef MOD_PATTERN_BPM
+// 8: strPattern::rezerwa2/3 = Pattern BPM (0 = OFF). Version 7 is intentionally skipped: it is reserved for
+// the Master Multiplier extension (rezerwa1), which this firmware does not carry.
+const uint8_t PATTERN_FILE_VERSION = 8;
+#else
 const uint8_t PATTERN_FILE_VERSION = 6;
+#endif
 
 const uint8_t CONFIG_STRUCT_VER = 10;
 

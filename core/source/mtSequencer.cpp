@@ -552,6 +552,11 @@ AUDIO_CORE_RAM void Sequencer::play_microStep(int row)
                 case fx.FX_TYPE_OFF:
                     killFxOnSlot(row, fxIndex);
                     atLeastOneFx = 1;
+#ifdef MOD_PATTERN_BPM
+                    // FX Off cancels an active Tempo FX; the starting tempo (Pattern BPM or Project BPM)
+                    // is restored by getCurrentTempo(). Neither saved BPM is touched.
+                    player.tempoFx.isActive = 0;
+#endif
 
                     if (fxIndex == playerRow.roll.fxSlot)
                     {
@@ -2315,6 +2320,12 @@ float Sequencer::getCurrentTempo()
         }
         else
         {
+#ifdef MOD_PATTERN_BPM
+            // starting tempo of the playing pattern; OFF falls back to the Project BPM
+            const uint16_t patternBpm = getPatternBpm(currentPattern);
+            if (patternBpm != 0)
+                return (float)patternBpm;
+#endif
             return mtProject.values.globalTempo;
         }
     }
