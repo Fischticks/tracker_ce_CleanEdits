@@ -2166,6 +2166,37 @@ uint16_t playerEngine ::getWavePosition()
       ->getPosition(); // should be the same for all channels, so returned the first one
 }
 
+#if defined(MOD_LAZY_CHOP) || defined(MOD_SAMPLE_BOUNDARY_CAPTURE)
+bool playerEngine ::isSamplePlaying()
+{
+    return playMemPtr[0]->isPlaying();
+}
+
+bool playerEngine ::isSampleReversed()
+{
+    return playMemPtr[0]->isReverse();
+}
+#endif
+
+#ifdef MOD_SAMPLE_BOUNDARY_CAPTURE
+uint32_t playerEngine ::getForwardLoopMinFrames()
+{
+    return AudioPlayMemory::getForwardLoopMinFrames();
+}
+
+void playerEngine ::applyCapturedBoundaries(uint8_t instrIdx, uint16_t loopPoint1, uint16_t loopPoint2)
+{
+    if (currentInstrument_idx != instrIdx)
+        return;
+
+    // Channel 0 first: a second (right) channel copies the points of its source channel.
+    for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
+    {
+        playMemPtr[channel]->applyCapturedBoundaries(instrIdx, loopPoint1, loopPoint2);
+    }
+}
+#endif
+
 int16_t* playerEngine ::getWaveStartAddressIfPlaying(int channel)
 {
     return playMemPtr[channel]->getStartAddresIfPlaying();

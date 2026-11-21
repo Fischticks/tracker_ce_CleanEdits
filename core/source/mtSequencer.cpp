@@ -3193,6 +3193,17 @@ void Sequencer::handleNoteOff(byte channel, // pochodzenie grida np. GRID_OUTSID
     }
 }
 
+#if defined(MOD_LAZY_CHOP) || defined(MOD_SAMPLE_BOUNDARY_CAPTURE)
+bool Sequencer::getManualNoteBinding(uint8_t track, int16_t& source, uint8_t& instrument) const
+{
+    if (track >= kAllTracks || !player.track[track].noteOpen)
+        return false;
+    source = player.track[track].noteSource;
+    instrument = (uint8_t)player.track[track].stepSent.instrument;
+    return true;
+}
+#endif
+
 void Sequencer::updateTrackLengths(strPattern* pattern)
 {
     for (int trackIdx = 0; trackIdx < kAllTracks; trackIdx++)
