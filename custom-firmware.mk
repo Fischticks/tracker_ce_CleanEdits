@@ -13,13 +13,12 @@
 #   make clean && make plus CUSTOM_DEFINES="-DMOD_PATTERN_SETTINGS"
 #   make clean && make plus CUSTOM_DEFINES=""
 #
-# New optional features are added below as commented-out entries and are only enabled by the project
-# owner. Documentation: docs/custom-firmware/README.md
+# Completed and accepted custom features are enabled in the default build. Keep a feature out only
+# for a documented reason (for example, experimental status, compatibility, or resource constraints).
+# Documentation: docs/custom-firmware/README.md
 
 CUSTOM_DEFINES ?= \
     -DMOD_PATTERN_BPM \
-    -DMOD_PATTERN_SETTINGS
-
-# Feature inventory (not enabled; to enable one, add its -D definition to CUSTOM_DEFINES above):
-# MOD_SAMPLE_BOUNDARY_CAPTURE
-# MOD_LAZY_CHOP
+    -DMOD_PATTERN_SETTINGS \
+    -DMOD_SAMPLE_BOUNDARY_CAPTURE \
+    -DMOD_LAZY_CHOP
