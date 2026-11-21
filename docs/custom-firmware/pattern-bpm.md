@@ -50,10 +50,18 @@ engine and storage only: **it has no user interface**. The control that edits th
 
 ## Build
 
+Definition: `MOD_PATTERN_BPM`. Whether it is part of the default firmware is set in `custom-firmware.mk` (see
+[README.md](README.md)); this document does not repeat the default. Without the definition the firmware has stock behaviour and
+the stock pattern file format.
+
+**File-format warning:** with the definition, projects are saved as pattern file version 8. Older stock firmware may not be able to
+load projects saved this way. Keep a backup of `Projects/` before using such a build on existing projects.
+
+To build one target without the feature, or with only some features, use a temporary command-line override (it does not change
+`custom-firmware.mk`; run `make clean` first):
 ```
-make plus CUSTOM_DEFINES="-DMOD_PATTERN_BPM"     # also: original, mini
+make clean && make plus CUSTOM_DEFINES=""
 ```
-Run `make clean` when changing `CUSTOM_DEFINES`. Flag off = stock behaviour and file format.
 
 ## Dependencies
 
