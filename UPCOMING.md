@@ -6,6 +6,10 @@
 
 ---
 
+### Custom Firmware Feature Defaults
+
+The default custom firmware build now includes all four completed optional features for **Original Tracker, Tracker+ and Tracker Mini**: Pattern BPM (`MOD_PATTERN_BPM`), Shift + Pattern Settings (`MOD_PATTERN_SETTINGS`), Sample Playback Boundary Capture (`MOD_SAMPLE_BOUNDARY_CAPTURE`) and Lazy Chop (`MOD_LAZY_CHOP`). The root `custom-firmware.mk` remains the single source of truth, and GitHub Actions inherits these defaults through the normal build. Individual features can still be omitted with a command-line `CUSTOM_DEFINES` override.
+
 ### Added
 
 1. **Loadable `.psyn` Synth Plugin SDK (Tracker+ & Tracker Mini)**
