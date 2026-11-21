@@ -32,7 +32,7 @@ make clean                                                           # required 
 
 ## Source files touched by more than one feature
 
-None yet. This table is updated whenever a second feature edits a file another feature already modifies.
+The table is updated whenever another feature edits one of these files.
 
 | File | Features |
 |---|---|
