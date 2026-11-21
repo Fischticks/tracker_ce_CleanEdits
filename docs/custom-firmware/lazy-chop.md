@@ -1,5 +1,7 @@
 # Lazy Chop — `MOD_LAZY_CHOP`
 
+> **Default build:** `MOD_LAZY_CHOP` is enabled by default for Original Tracker, Tracker+ and Tracker Mini through the root `custom-firmware.mk`. See [the custom firmware overview](README.md) for configuration and temporary overrides.
+
 ## Source files
 
 **New:**
