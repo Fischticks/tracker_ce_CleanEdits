@@ -20,6 +20,9 @@
 #include "sampleImporter/sampleImporter.h"
 #include "samplePlayback/samplePlayback.h"
 #include "sampleRecorder/sampleRecorder.h"
+#ifdef MOD_PATTERN_SETTINGS
+#include "shiftPattern/shiftPattern.h"
+#endif
 #include "songEditor/songEditor.h"
 
 #include "fileManager.h"
@@ -670,6 +673,14 @@ void interfaceEnvents(uint8_t event, void* param1, void* param2, void* param3)
             mtInterface.activateModule(&imageViewer, param2 == nullptr ? 0 : *((uint8_t*)param2));
             break;
         }
+#ifdef MOD_PATTERN_SETTINGS
+        case eventActivateShiftPattern:
+        {
+            mtInterface.deactivateModule((hModule)param1);
+            mtInterface.activateModule(&shiftPattern, 0);
+            break;
+        }
+#endif
         case eventToggleActiveModule:
         {
             mtInterface.toggleActiveModule(*((uint8_t*)param3));
