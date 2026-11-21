@@ -5,6 +5,7 @@
 #include "mtPadBoard.h"
 #include "mtPadsBacklight.h"
 #include "samplePlayback/samplePlayback.h"
+#include "samplePlayback/sampleMarkers.h" // Sample Playback Markers hooks (no-ops without the flags)
 
 #include "Platform.h"
 #include "core/graphicProcessing.h"
@@ -87,6 +88,7 @@ constexpr uint32_t PLAY_REFRESH_US = 5000;
 
 void cSamplePlayback::update()
 {
+    sampleMarkers::update();
     refreshLiveParams();
 
     // A MIDI or synth instrument has no waveform; the request waits for a sample instrument.
@@ -343,6 +345,7 @@ void cSamplePlayback::stop()
     }
 
     clearDisplayedTrack();
+    sampleMarkers::finalizeAll(false); // before stopManualNotes() invalidates the note source
     sequencer.stopManualNotes();
     sequencer.setMidiInVoiceMode(Sequencer::midiInVoiceMode_default);
     moduleRefresh = 0;
@@ -639,6 +642,7 @@ void cSamplePlayback::onEndTrackDisplay()
 void cSamplePlayback::noteOnHandle(uint8_t channel, uint8_t note, uint8_t velocity, int16_t source)
 {
     sequencer.handleNoteOn(channel, note, velocity, source);
+    sampleMarkers::onNoteOn(source);
 
     if (mtProject.values.lastUsedInstrument >= kSampleInstrumentsCount)
     {
@@ -671,6 +675,7 @@ void cSamplePlayback::noteOffHandle(uint8_t channel, uint8_t note, uint8_t veloc
 {
     (void)velocity;
     sequencer.handleNoteOff(channel, note, 0, source);
+    sampleMarkers::onNoteOff(source);
 }
 
 void cSamplePlayback::lightUpPadBoard()
@@ -801,6 +806,9 @@ static void functButton1(uint8_t state)
         return;
     }
 
+    if (state == buttonPress)
+        sampleMarkers::captureBoundary(0); // Sample Boundary Capture: additive, never consumes the key
+
     if ((SP->editorInstrument->playMode == playModeBeatSlice) ||
         (SP->editorInstrument->playMode == playModeSlice))
     {
@@ -888,6 +896,9 @@ static void functButton2(uint8_t state)
     {
         return;
     }
+
+    if (state == buttonPress)
+        sampleMarkers::captureBoundary(1); // Sample Boundary Capture: additive, never consumes the key
 
     if (SP->editorInstrument->playMode == playModeBeatSlice ||
         SP->editorInstrument->playMode == playModeSlice)
@@ -983,6 +994,9 @@ static void functButton3(uint8_t state)
     {
         return;
     }
+
+    if (state == buttonPress)
+        sampleMarkers::captureBoundary(2); // Sample Boundary Capture: additive, never consumes the key
 
     if (SP->editorInstrument->playMode == playModeBeatSlice ||
         SP->editorInstrument->playMode == playModeSlice)
@@ -1083,6 +1097,9 @@ static void functButton4(uint8_t state)
     {
         return;
     }
+
+    if (state == buttonPress)
+        sampleMarkers::captureBoundary(3); // Sample Boundary Capture: additive, never consumes the key
 
     if (SP->editorInstrument->playMode == playModeSlice ||
         SP->editorInstrument->playMode == playModeBeatSlice)
@@ -1185,6 +1202,7 @@ static void functButton5()
     else if (SP->editorInstrument->playMode == playModeBeatSlice ||
              SP->editorInstrument->playMode == playModeSlice)
     {
+        sampleMarkers::finalizeAll(); // before the Add controls change meaning
         SP->sliceScreenMode2 = !SP->sliceScreenMode2;
 
         if (!SP->sliceScreenMode2)
@@ -1793,6 +1811,7 @@ static void functPlayAction()
 
     if (sequencer.getSeqState() == Sequencer::SEQ_STATE_STOP)
     {
+        sampleMarkers::finalizeAll(); // before the voices are cut
         for (uint8_t i = 0; i < 8; i++)
         {
             instrumentPlayer[i].noteOff(Sequencer::STEP_NOTE_OFF_CUT); // POTRZEBNE TO TU? xxx
@@ -1836,6 +1855,7 @@ static void changeZoom(int16_t value)
 
 static void changePlayModeSelection(int16_t value)
 {
+    sampleMarkers::finalizeAll(); // before the cut and any cache operation
     if (SP->isPlayingSample)
     {
         mtPadBoard.cutAllInstrument();
@@ -2389,6 +2409,8 @@ static void modSliceAdjust(int16_t value)
 
 static void functAddSlice()
 {
+    if (sampleMarkers::captureSliceMarker()) // active Lazy Chop session: capture instead of midpoint Add
+        return;
     sliceManager.addSlice(SP->editorInstrument);
     if (mtProject.values.lastUsedInstrument < kSampleInstrumentsCount &&
         mtProject.sampleMemory[mtProject.values.lastUsedInstrument].isStreamed)

@@ -768,6 +768,10 @@ class Sequencer
     void recEnable(bool enable);
     void stop(void);
     void stopManualNotes(void);
+#if defined(MOD_LAZY_CHOP) || defined(MOD_SAMPLE_BOUNDARY_CAPTURE)
+    // Read-only: true when `track` holds an open manual (preview) note; reports its source and instrument.
+    bool getManualNoteBinding(uint8_t track, int16_t& source, uint8_t& instrument) const;
+#endif
     void continueSong(uint8_t songPos);
     void loopCurrentPattern(uint8_t songPos);
     int16_t findSlotWithPattern();

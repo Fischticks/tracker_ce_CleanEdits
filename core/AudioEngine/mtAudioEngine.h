@@ -330,6 +330,16 @@ class playerEngine
     uint32_t getEnvelopeWtPosMod();
 
     uint16_t getWavePosition();
+#if defined(MOD_LAZY_CHOP) || defined(MOD_SAMPLE_BOUNDARY_CAPTURE)
+    // Per-voice, read-only queries used by Sample Playback Markers (call getWavePosition() only while playing).
+    bool isSamplePlaying();
+    bool isSampleReversed();
+#endif
+#ifdef MOD_SAMPLE_BOUNDARY_CAPTURE
+    static uint32_t getForwardLoopMinFrames();
+    // Live part of a boundary commit: must be called by the caller inside AudioNoInterrupts().
+    void applyCapturedBoundaries(uint8_t instrIdx, uint16_t loopPoint1, uint16_t loopPoint2);
+#endif
     int16_t* getWaveStartAddressIfPlaying(int channel);
     uint32_t getLengthIfPlaying();
     void update();

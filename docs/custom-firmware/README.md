@@ -47,6 +47,8 @@ make clean && make plus CUSTOM_DEFINES=""                          # no optional
 |---|---|---|---|
 | Pattern BPM (engine, pattern file v8) | `MOD_PATTERN_BPM` | – | [pattern-bpm.md](pattern-bpm.md) |
 | Shift + Pattern screen: Pattern Settings (Length, Divider, BPM) | `MOD_PATTERN_SETTINGS` | optional: `MOD_PATTERN_BPM` (adds the BPM slider) | [pattern-settings.md](pattern-settings.md) |
+| Sample Playback Boundary Capture | `MOD_SAMPLE_BOUNDARY_CAPTURE` | – | [sample-boundary-capture.md](sample-boundary-capture.md) |
+| Lazy Chop | `MOD_LAZY_CHOP` | – | [lazy-chop.md](lazy-chop.md) |
 
 Which of these are enabled by default is defined only in `custom-firmware.mk`.
 
@@ -56,6 +58,8 @@ saved that way; keep a backup of `Projects/` before using such a build on existi
 ## Dependencies
 
 - Pattern BPM has no prerequisites.
+- Boundary Capture and Lazy Chop have no prerequisites and are independent of each other and of the Pattern features. When either is
+  enabled, `samplePlayback/previewSession.*` is compiled in as shared support.
 - Pattern Settings works on its own (Length and Divider sliders). With `MOD_PATTERN_BPM` it also shows the BPM slider that edits
   the Pattern BPM. The engine does not depend on the screen.
 
@@ -80,5 +84,17 @@ The table is updated whenever another feature edits one of these files.
 | `core/interface/patternEditor/fPatternEdit.cpp`, `patternEditor.h` | Pattern Settings |
 | `core/interface/core/interface.cpp`, `interfaceDefs.h` | Pattern Settings |
 
-No file is modified by both features. Pattern Settings reads the Pattern BPM only through the accessors Pattern BPM adds to
+Sample Playback Markers (Boundary Capture and Lazy Chop have independent definitions; both compile `samplePlayback/previewSession.*` when either is on):
+
+| File | Features |
+|---|---|
+| `core/interface/samplePlayback/fSamplePlay.cpp` | Boundary Capture, Lazy Chop (one `sampleMarkers::` hook surface; Add Slice call is Lazy Chop only) |
+| `core/source/mtSequencer.h/.cpp` | Boundary Capture, Lazy Chop (shared `getManualNoteBinding()`), also Pattern BPM (different regions) |
+| `core/AudioEngine/mtAudioEngine.h/.cpp` | Boundary Capture, Lazy Chop (shared `isSamplePlaying/isSampleReversed`; capture adds two more) |
+| `core/libs/Audio/play_memory.h` | Boundary Capture, Lazy Chop (shared `isReverse()`) |
+| `core/source/mtSliceManager.*`, `core/AudioEngine/VoiceStreamManager.*` | Lazy Chop |
+
+The Pattern features are not modified by Sample Playback Markers (`mtSequencer.*` is a shared file, edited in different regions).
+
+No file is modified by both Pattern features. Pattern Settings reads the Pattern BPM only through the accessors Pattern BPM adds to
 `mtSequencer.h`.

@@ -20,5 +20,6 @@ CUSTOM_DEFINES ?= \
     -DMOD_PATTERN_BPM \
     -DMOD_PATTERN_SETTINGS
 
-# Feature inventory (not enabled; uncomment to enable):
-# (none yet)
+# Feature inventory (not enabled; to enable one, add its -D definition to CUSTOM_DEFINES above):
+# MOD_SAMPLE_BOUNDARY_CAPTURE
+# MOD_LAZY_CHOP

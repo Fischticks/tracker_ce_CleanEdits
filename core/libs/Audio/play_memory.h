@@ -127,6 +127,14 @@ class AudioPlayMemory : public AudioStream
     //************Reverse
     void setReverse();
     void clearReverse();
+#if defined(MOD_LAZY_CHOP) || defined(MOD_SAMPLE_BOUNDARY_CAPTURE)
+    bool isReverse() const { return reverseDirectionFlag != 0; } // read-only (Sample Playback Markers)
+#endif
+#ifdef MOD_SAMPLE_BOUNDARY_CAPTURE
+    // Sample Boundary Capture (see play_memory_boundary_capture.cpp)
+    static uint32_t getForwardLoopMinFrames();
+    bool applyCapturedBoundaries(uint8_t instrIdx, uint16_t loopPoint1, uint16_t loopPoint2);
+#endif
     //*********
     //************Pitch
     // Tune
