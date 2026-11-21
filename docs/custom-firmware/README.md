@@ -17,10 +17,13 @@ make clean                                                           # required 
 | Feature | Flag | Default | Requires | Document |
 |---|---|---|---|---|
 | Pattern BPM (engine, pattern file v8) | `MOD_PATTERN_BPM` | off | – | [pattern-bpm.md](pattern-bpm.md) |
+| Shift + Pattern screen: Pattern Settings (Length, Divider, BPM) | `MOD_PATTERN_SETTINGS` | off | optional: `MOD_PATTERN_BPM` (adds the BPM slider) | [pattern-settings.md](pattern-settings.md) |
 
 ## Dependencies
 
-- Pattern BPM has no prerequisites. A feature that edits the value (Pattern Settings) lists it as an optional dependency.
+- Pattern BPM has no prerequisites.
+- Pattern Settings works on its own (Length and Divider sliders). With `MOD_PATTERN_BPM` it also shows the BPM slider that edits
+  the Pattern BPM. The engine does not depend on the screen.
 
 ## Pattern file versions
 
@@ -40,3 +43,8 @@ The table is updated whenever another feature edits one of these files.
 | `core/source/mtSequencer.h` | Pattern BPM |
 | `core/source/mtStructs.h` | Pattern BPM |
 | `core/FileManager/fileManagerPattern.cpp` | Pattern BPM |
+| `core/interface/patternEditor/fPatternEdit.cpp`, `patternEditor.h` | Pattern Settings |
+| `core/interface/core/interface.cpp`, `interfaceDefs.h` | Pattern Settings |
+
+No file is modified by both features. Pattern Settings reads the Pattern BPM only through the accessors Pattern BPM adds to
+`mtSequencer.h`.
