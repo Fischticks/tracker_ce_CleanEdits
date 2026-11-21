@@ -28,29 +28,29 @@ A command-line `CUSTOM_DEFINES` replaces the whole default list for that build o
 (note: it is not additive, and a `CUSTOM_DEFINES` set in your shell environment overrides the file as well):
 
 ```
-make clean && make plus CUSTOM_DEFINES="-DMOD_PATTERN_SETTINGS"   # Settings without Pattern BPM
+make clean && make plus CUSTOM_DEFINES="-DMOD_PATTERN_BPM -DMOD_PATTERN_SETTINGS -DMOD_SAMPLE_BOUNDARY_CAPTURE -DMOD_LAZY_CHOP"   # explicitly select all defaults
 make clean && make plus CUSTOM_DEFINES=""                          # no optional features (stock behaviour)
 ```
 
-### Policy for new optional features
+### Policy for optional features
 
-1. Implement the feature behind its own dedicated definition and document the definition and what it does.
-2. Add a **commented-out** entry for it to `custom-firmware.mk`. Only the project owner uncomments it; a feature PR never enables
-   itself by default.
-3. Do not add feature definitions to GitHub Actions, to other makefiles, or to another configuration file.
-4. Feature documents name the definition and its dependencies but do not state a default; they point here.
-5. The PR describes how to test the feature enabled and disabled (command-line overrides).
+1. Implement each feature behind its own dedicated definition and document the definition and what it does.
+2. Add completed and accepted features to the default `CUSTOM_DEFINES` list. Keep a feature disabled by default only for a
+   documented reason, such as experimental status, compatibility concerns, or resource constraints.
+3. Keep feature definitions centralized in `custom-firmware.mk`; do not duplicate defaults in GitHub Actions or other makefiles.
+4. Feature documents name the definition, its dependencies, and whether it is included in the default build.
+5. The PR describes how to test the feature both enabled and disabled using command-line overrides.
 
 ## Features
 
-| Feature | Definition | Requires | Document |
+| Feature | Definition | Default build | Requires | Document |
 |---|---|---|---|
-| Pattern BPM (engine, pattern file v8) | `MOD_PATTERN_BPM` | – | [pattern-bpm.md](pattern-bpm.md) |
-| Shift + Pattern screen: Pattern Settings (Length, Divider, BPM) | `MOD_PATTERN_SETTINGS` | optional: `MOD_PATTERN_BPM` (adds the BPM slider) | [pattern-settings.md](pattern-settings.md) |
-| Sample Playback Boundary Capture | `MOD_SAMPLE_BOUNDARY_CAPTURE` | – | [sample-boundary-capture.md](sample-boundary-capture.md) |
-| Lazy Chop | `MOD_LAZY_CHOP` | – | [lazy-chop.md](lazy-chop.md) |
+| Pattern BPM (engine, pattern file v8) | `MOD_PATTERN_BPM` | Enabled | – | [pattern-bpm.md](pattern-bpm.md) |
+| Shift + Pattern screen: Pattern Settings (Length, Divider, BPM) | `MOD_PATTERN_SETTINGS` | Enabled | optional: `MOD_PATTERN_BPM` (adds the BPM slider) | [pattern-settings.md](pattern-settings.md) |
+| Sample Playback Boundary Capture | `MOD_SAMPLE_BOUNDARY_CAPTURE` | Enabled | – | [sample-boundary-capture.md](sample-boundary-capture.md) |
+| Lazy Chop | `MOD_LAZY_CHOP` | Enabled | – | [lazy-chop.md](lazy-chop.md) |
 
-Which of these are enabled by default is defined only in `custom-firmware.mk`.
+All four features are enabled in the default build for Original Tracker, Tracker+ and Tracker Mini. The exact default list is defined only in `custom-firmware.mk`.
 
 **File-format warning:** with `MOD_PATTERN_BPM` the firmware saves pattern file version 8. Older stock firmware may not load projects
 saved that way; keep a backup of `Projects/` before using such a build on existing projects.
