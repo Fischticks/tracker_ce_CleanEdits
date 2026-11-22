@@ -2022,75 +2022,100 @@ void playerEngine::endFxPanningLFO(uint8_t fx_n)
 
 void playerEngine::endFxFinetuneLFO(uint8_t fx_n)
 {
-    uint8_t otherFx_n = !fx_n;
+    const uint8_t otherFx_n = !fx_n;
+    const int parameter = (int)parameterList::lfoFinetune;
+    const int sequencerType = (int)controlType::sequencerMode + fx_n;
+    const bool performanceSourceActive =
+      trackControlParameter[(int)controlType::performanceMode][parameter];
+    const bool otherSequencerSourceActive =
+      trackControlParameter[(int)controlType::sequencerMode + otherFx_n][parameter];
 
-    trackControlParameter[(int)controlType::sequencerMode + fx_n][(int)parameterList::lfoFinetune] =
-      0;
+    if (!trackControlParameter[sequencerType][parameter])
+        return;
 
-    if (trackControlParameter[(int)controlType::performanceMode][(int)parameterList::lfoFinetune])
+    trackControlParameter[sequencerType][parameter] = 0;
+
+    bool sourceChanged = false;
+    bool fallbackIsLfo = false;
+
+    if (performanceSourceActive)
+    {
+        // Performance remains the authoritative source. Update only the lower-priority
+        // sequencer fallback when the most-significant FX slot is removed; do not restart
+        // or re-sync the still-active performance LFO.
+        if (fx_n == MOST_SIGNIFICANT_FX && otherSequencerSourceActive)
+        {
+            currentSeqModValues.lfoFinetuneRate = lastSeqVal[otherFx_n];
+            currentSeqModValues.lfoFinetuneEnable = 1;
+        }
+    }
+    else if (otherSequencerSourceActive)
     {
         if (fx_n == MOST_SIGNIFICANT_FX)
         {
-            if (trackControlParameter[(int)controlType::sequencerMode + otherFx_n]
-                                     [(int)parameterList::lfoFinetune])
-            {
-                currentSeqModValues.lfoFinetuneRate = lastSeqVal[otherFx_n];
-                currentSeqModValues.lfoFinetuneEnable = 1;
-            }
+            currentSeqModValues.lfoFinetuneRate = lastSeqVal[otherFx_n];
+            currentSeqModValues.lfoFinetuneEnable = 1;
+
+            const uint8_t curLoop =
+              mtProject.instrument[currentInstrument_idx].envelope[envFinetune].loop;
+            const uint8_t targetLoop = (curLoop == 3) ? 3 : 1;
+            calcLfoBasedEnvelope(&lfoBasedEnvelope[envFinetune],
+                                 &mtProject.instrument[currentInstrument_idx].lfo[envFinetune],
+                                 currentSeqModValues.lfoFinetuneRate,
+                                 0,
+                                 targetLoop);
+            initEnvelopesParameters(envFinetune, &lfoBasedEnvelope[envFinetune]);
+            const bool isRandom = (targetLoop == 1) &&
+                                  (mtProject.instrument[currentInstrument_idx].lfo[envFinetune].shape ==
+                                   lfoShapeRandom);
+            envelopePtr[envFinetune]->setIsRandom(isRandom);
+            sourceChanged = true;
+            fallbackIsLfo = true;
         }
-        changeFinetuneLfoRatePerformanceMode(performanceMod.lfoFinetuneRate);
+        // If the less-significant slot ends, the other slot remains authoritative.
     }
     else
     {
-        uint8_t curLoop = mtProject.instrument[currentInstrument_idx].envelope[envFinetune].loop;
-        if (trackControlParameter[(int)controlType::sequencerMode + otherFx_n]
-                                 [(int)parameterList::lfoFinetune])
+        sourceChanged = true;
+        const uint8_t curLoop =
+          mtProject.instrument[currentInstrument_idx].envelope[envFinetune].loop;
+        if (mtProject.instrument[currentInstrument_idx].envelope[envFinetune].enable)
         {
-            if (fx_n == MOST_SIGNIFICANT_FX)
+            if (curLoop == 1 || curLoop == 3)
             {
-                currentSeqModValues.lfoFinetuneRate = lastSeqVal[otherFx_n];
-                currentSeqModValues.lfoFinetuneEnable = 1;
-
-                uint8_t targetLoop = (curLoop == 3) ? 3 : 1;
                 calcLfoBasedEnvelope(&lfoBasedEnvelope[envFinetune],
                                      &mtProject.instrument[currentInstrument_idx].lfo[envFinetune],
-                                     currentSeqModValues.lfoFinetuneRate,
+                                     mtProject.instrument[currentInstrument_idx].lfo[envFinetune].speed,
                                      0,
-                                     targetLoop);
+                                     curLoop);
                 initEnvelopesParameters(envFinetune, &lfoBasedEnvelope[envFinetune]);
+                const bool isRandom = (curLoop == 1) &&
+                                      (mtProject.instrument[currentInstrument_idx].lfo[envFinetune].shape ==
+                                       lfoShapeRandom);
+                envelopePtr[envFinetune]->setIsRandom(isRandom);
+                fallbackIsLfo = true;
+            }
+            else
+            {
+                initEnvelopesParameters(
+                  envFinetune,
+                  &mtProject.instrument[currentInstrument_idx].envelope[envFinetune]);
+                envelopePtr[envFinetune]->setIsRandom(false);
             }
         }
         else
         {
-            if (mtProject.instrument[currentInstrument_idx].envelope[envFinetune].enable)
-            {
-                if (curLoop == 1 || curLoop == 3)
-                {
-                    calcLfoBasedEnvelope(
-                      &lfoBasedEnvelope[envFinetune],
-                      &mtProject.instrument[currentInstrument_idx].lfo[envFinetune],
-                      mtProject.instrument[currentInstrument_idx].lfo[envFinetune].speed,
-                      0,
-                      curLoop);
-                    initEnvelopesParameters(envFinetune, &lfoBasedEnvelope[envFinetune]);
-                }
-                else
-                {
-                    initEnvelopesParameters(
-                      envFinetune,
-                      &mtProject.instrument[currentInstrument_idx].envelope[envFinetune]);
-                }
-            }
-            else
-            {
-                // Last active source was removed; do not leave a stale pitch ratio on the note.
-                currentEnvelopeModification[envFinetune] = 0.0f;
-                envelopePtr[envFinetune]->stop();
-            }
+            // Last active source was removed; do not leave a stale pitch ratio on the note.
+            currentEnvelopeModification[envFinetune] = 0.0f;
+            envelopePtr[envFinetune]->stop();
+            envelopePtr[envFinetune]->setIsRandom(false);
         }
     }
 
-    setSyncParamsLFO(envFinetune);
+    // Sync-origin setup is needed only when ownership actually changes to an LFO source.
+    if (sourceChanged && fallbackIsLfo)
+        setSyncParamsLFO(envFinetune);
+
     refreshRegister |= FINETUNE_MASK;
 }
 
