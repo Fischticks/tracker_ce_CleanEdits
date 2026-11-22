@@ -59,6 +59,8 @@ AUDIO_CORE_RAM void playerEngine::update()
         handleUpdateRefreshReverb();
         handleUpdateRefreshOverdrive();
         handleUpdateRefreshBitDepth();
+        handleUpdateRefreshSampleRateReduction();
+        handleUpdateRefreshToneFilter();
         handleUpdateRefreshGranLen();
         handleUpdateRefreshGranWave();
         handleUpdateRefreshGranLoop();
@@ -536,6 +538,24 @@ inline void playerEngine::handleUpdateRefreshBitDepth()
         }
 
         modBitDepth(bitDepth);
+    }
+}
+
+inline void playerEngine::handleUpdateRefreshSampleRateReduction()
+{
+    if (refreshRegister & SAMPLE_RATE_REDUCTION_MASK)
+    {
+        refreshRegister &= (~SAMPLE_RATE_REDUCTION_MASK);
+        modSampleRateReduction(mtProject.instrument[currentInstrument_idx].sampleRateReduction);
+    }
+}
+
+inline void playerEngine::handleUpdateRefreshToneFilter()
+{
+    if (refreshRegister & TONE_FILTER_MASK)
+    {
+        refreshRegister &= (~TONE_FILTER_MASK);
+        modToneFilter(mtProject.instrument[currentInstrument_idx].toneFilter);
     }
 }
 

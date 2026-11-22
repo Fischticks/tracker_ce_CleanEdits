@@ -41,7 +41,7 @@ const char firmwareVersionLabelFormat[] = "%d.%d.%d " FW_EDITION_NAME;
 const char firmwareVersionLabelFormatBeta[] = "%d.%d.%d " FW_EDITION_NAME " beta %d";
 
 const uint8_t PROJECT_FILE_VERSION = 17;   // wersja struktury pliku projektu
-const uint8_t INSTRUMENT_FILE_VERSION = 9; // wersja struktury pliku instrumentu
+const uint8_t INSTRUMENT_FILE_VERSION = 10; // wersja struktury pliku instrumentu
 #ifdef MOD_PATTERN_BPM
 // 8: strPattern::rezerwa2/3 = Pattern BPM (0 = OFF). Version 7 is intentionally skipped: it is reserved for
 // the Master Multiplier extension (rezerwa1), which this firmware does not carry.
@@ -253,6 +253,8 @@ constexpr uint32_t LFO_FINETUNE_SEND_MASK = 0b00000000000010000000000000000000;
 constexpr uint32_t REVERB_SEND_MASK = 0b00000000000100000000000000000000;
 constexpr uint32_t OVERDRIVE_MASK = 0b00000000001000000000000000000000;
 constexpr uint32_t BIT_DEPTH_MASK = 0b00000000010000000000000000000000;
+constexpr uint32_t SAMPLE_RATE_REDUCTION_MASK = 0b00000000100000000000000000000000;
+constexpr uint32_t TONE_FILTER_MASK = 0b00000001000000000000000000000000;
 
 const uint8_t MIN_NOTE_OFFSET = 0;
 const uint8_t MAX_NOTE_OFFSET = 13;
@@ -682,6 +684,11 @@ struct strInstrument
     uint8_t bitDepth; // = BIT_DEPTH_MAX;
     int8_t tuneResample;
 
+    // Static sample-instrument effects; appended for backward-compatible .pti migration.
+    uint8_t sampleRateReduction;
+    int8_t toneFilter;
+    uint8_t sampleEffectsReserved[2];
+
     // Bitmasks for envelope[envWtPos / envGranLen].enable so legacy .pti files (which only ever
     // set bit 0 = 0x01 for Wavetable Position) never unintendedly enable Granular Length automation.
     static constexpr uint8_t kEnvEnableWtPosBit = 0x01;
@@ -737,7 +744,7 @@ struct strInstrument
         }
     }
 };
-static_assert(sizeof(strInstrument) == 372, "strInstrument size must remain 372 bytes");
+static_assert(sizeof(strInstrument) == 376, "strInstrument size must remain 376 bytes");
 
 //----------------------------------------------------------------------------------
 const strInstrument defaultInstrumentParams = {
@@ -781,6 +788,9 @@ const strInstrument defaultInstrumentParams = {
     .overdrive = 0,
     .bitDepth = 16,
     .tuneResample = 0,
+    .sampleRateReduction = 0,
+    .toneFilter = 0,
+    .sampleEffectsReserved = { 0, 0 },
 };
 
 //----------------------------------------------------------------------------------

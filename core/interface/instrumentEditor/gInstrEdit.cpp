@@ -9,6 +9,7 @@
 #include "string.h"
 #include "util_math.h"
 #include "util_string.h"
+#include "Audio.h"
 
 extern const char* const InstrumentCCNames[47];
 
@@ -676,8 +677,8 @@ void cInstrumentEditor::showInstrumentEnv()
 void cInstrumentEditor::showEffectScreen()
 {
     showTitleBar();
+    frameData.placesCount = 6;
     showSendScreenFrame();
-    frameData.placesCount = 4;
 
     for (uint8_t i = 0; i < 8; i++)
     {
@@ -693,39 +694,28 @@ void cInstrumentEditor::showEffectScreen()
     uint32_t shadow = (display.getTheme().bottomScreenShadow > 0 ? controlStyleBottomShadow : 0);
     uint32_t gradient = (display.getTheme().barShadow > 0 ? controlStyleGradient : 0);
 
-    display.setControlStyle(barControl[0],
-                            (controlStyleShow | controlStyleValue_0_100 | controlStyleBackground) |
-                              shadow | gradient);
-    display.setControlStyle(barControl[1],
-                            (controlStyleShow | controlStyleValue_0_100 | controlStyleBackground) |
-                              shadow | gradient);
-    display.setControlStyle(barControl[2],
-                            (controlStyleShow | controlStyleValue_0_100 | controlStyleBackground) |
-                              shadow | gradient);
+    for (uint8_t i = 0; i < 6; i++)
+    {
+        display.setControlStyle(barControl[i],
+                                (controlStyleShow | controlStyleValue_0_100 |
+                                 controlStyleBackground) | shadow | gradient);
+        display.setControlShow(barControl[i]);
+    }
     display.setControlStyle(barControl[3],
-                            (controlStyleShow | controlStyleValue_0_100 | controlStyleBackground) |
-                              shadow | gradient);
-
-    display.setControlShow(barControl[0]);
-    display.setControlShow(barControl[1]);
-    display.setControlShow(barControl[2]);
-    display.setControlShow(barControl[3]);
+                            (controlStyleShow | controlStyleValueLeftRight_100_100 |
+                             controlStyleBackground) | shadow | gradient);
     display.setControlHide(filterModeListControl);
-    display.setControlHide(barControl[5]);
     display.setControlHide(barControl[6]);
+    display.setControlHide(barControl[7]);
 
     display.setControlText(label[0], "Overdrive");
     display.setControlText(label[1], "Bit depth");
-    display.setControlText(label[2], "Reverb send");
-    display.setControlText(label[3], "Delay send");
-    display.setControlText(label[4], "Instrument");
-    display.setControlText2(label[4], "MIDI Mapping");
-
-    for (uint8_t i = 5; i < 7; i++)
-    {
-        display.setControlText(label[i], "");
-        display.setControlText2(label[i], "");
-    }
+    display.setControlText(label[2], "Sample rate");
+    display.setControlText(label[3], "Tone Filter");
+    display.setControlText(label[4], "Reverb send");
+    display.setControlText(label[5], "Delay send");
+    display.setControlText(label[6], "Instrument");
+    display.setControlText2(label[6], "MIDI Mapping");
     display.setControlText(label[7], "Back");
     display.setControlText2(label[7], "");
 
@@ -733,14 +723,15 @@ void cInstrumentEditor::showEffectScreen()
     labelDataMore.dotIndicator.current = 1;
     display.setControlData(label[7], &labelDataMore);
 
-    showParamsDelaySend();
-    showParamsReverbSend();
     showParamsOverdrive();
     showParamsBitDepth();
+    showParamsSampleRateReduction();
+    showParamsToneFilter();
+    showParamsReverbSend();
+    showParamsDelaySend();
 
     display.setRemoveControlStyle(label[1], controlStyleShowBitmap);
     display.setRemoveControlStyle(label[6], controlStyleShowBitmap);
-
     display.setControlPosition(label[1], (800 / 8) * 1 + (800 / 16), -1);
     display.setControlPosition(label[6], (800 / 8) * 6 + (800 / 16), -1);
 
@@ -757,9 +748,9 @@ void cInstrumentEditor::showEffectScreen()
         display.refreshControl(barControl[i]);
     }
 
-    display.setControlStyle2(label[4],
+    display.setControlStyle2(label[6],
                              controlStyleCenterX | controlStyleCenterY | controlStyleFont3);
-    display.setControlColors(label[4], display.getTheme().activeButtonLabelsColors);
+    display.setControlColors(label[6], display.getTheme().activeButtonLabelsColors);
 
     display.setControlValue(bgLabel, 255); // 0b10111111
     display.setControlShow(bgLabel);
@@ -770,8 +761,8 @@ void cInstrumentEditor::showEffectScreen()
     display.setControlHide(modelListControl);
     display.setControlHide(imgGridControl);
 
-    display.setControlPosition(blankSpaceCover[0], (800 / 8) * 4 + 1, -1);
-    display.setControlSize(blankSpaceCover[0], (800 / 8) * 4 - 3, 394);
+    display.setControlPosition(blankSpaceCover[0], (800 / 8) * 6 + 1, -1);
+    display.setControlSize(blankSpaceCover[0], (800 / 8) - 3, 394);
     display.setControlShow(blankSpaceCover[0]);
     display.refreshControl(blankSpaceCover[0]);
 
@@ -780,7 +771,7 @@ void cInstrumentEditor::showEffectScreen()
 
 void cInstrumentEditor::showSendScreenFrame()
 {
-    if (selectedPlaceSends > 3)
+    if (selectedPlaceSends > 5)
         return;
 
     display.setControlValue(frameControl, selectedPlaceSends);
@@ -1702,26 +1693,26 @@ void cInstrumentEditor::showParamsDelaySend()
 {
     float sendInDecybels = calcInstrumentSendsDecybelValue(editorInstrument->delaySend);
 
-    sprintf(labelText[3], "%0.02f dB", sendInDecybels);
+    sprintf(labelText[5], "%0.02f dB", sendInDecybels);
 
-    display.setControlText2(label[3], labelText[3]);
-    display.refreshControl(label[3]);
+    display.setControlText2(label[5], labelText[5]);
+    display.refreshControl(label[5]);
 
-    display.setControlValue(barControl[3], editorInstrument->delaySend);
-    display.refreshControl(barControl[3]);
+    display.setControlValue(barControl[5], editorInstrument->delaySend);
+    display.refreshControl(barControl[5]);
 }
 
 void cInstrumentEditor::showParamsReverbSend()
 {
     float sendInDecybels = calcInstrumentSendsDecybelValue(editorInstrument->reverbSend);
 
-    sprintf(labelText[2], "%0.02f dB", sendInDecybels);
+    sprintf(labelText[4], "%0.02f dB", sendInDecybels);
 
-    display.setControlText2(label[2], labelText[2]);
-    display.refreshControl(label[2]);
+    display.setControlText2(label[4], labelText[4]);
+    display.refreshControl(label[4]);
 
-    display.setControlValue(barControl[2], editorInstrument->reverbSend);
-    display.refreshControl(barControl[2]);
+    display.setControlValue(barControl[4], editorInstrument->reverbSend);
+    display.refreshControl(barControl[4]);
 }
 
 void cInstrumentEditor::showParamsOverdrive()
@@ -1744,6 +1735,42 @@ void cInstrumentEditor::showParamsBitDepth()
 
     display.setControlValue(barControl[1], barDisplayedBitDepth);
     display.refreshControl(barControl[1]);
+}
+
+void cInstrumentEditor::showParamsSampleRateReduction()
+{
+    if (editorInstrument->sampleRateReduction == 0)
+        strcpy(labelText[2], "Bypass");
+    else
+        sprintf(labelText[2], "%0.0f Hz",
+                AudioSampleRateReduction::effectiveRateHz(editorInstrument->sampleRateReduction));
+
+    display.setControlText2(label[2], labelText[2]);
+    display.refreshControl(label[2]);
+    display.setControlValue(barControl[2],
+                            map<int>(editorInstrument->sampleRateReduction, 0, 255, 0, 100));
+    display.refreshControl(barControl[2]);
+}
+
+void cInstrumentEditor::showParamsToneFilter()
+{
+    const int8_t value = editorInstrument->toneFilter;
+    if (value == 0)
+        strcpy(labelText[3], "Off");
+    else
+    {
+        const float cutoff = AudioToneFilter::cutoffHz(value);
+        const char* mode = value < 0 ? "LP" : "HP";
+        if (cutoff >= 1000.0f)
+            sprintf(labelText[3], "%s %0.0fk", mode, cutoff / 1000.0f);
+        else
+            sprintf(labelText[3], "%s %0.0fHz", mode, cutoff);
+    }
+
+    display.setControlText2(label[3], labelText[3]);
+    display.refreshControl(label[3]);
+    display.setControlValue(barControl[3], value);
+    display.refreshControl(barControl[3]);
 }
 
 void cInstrumentEditor::refreshFramePosition()
