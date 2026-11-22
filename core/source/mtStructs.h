@@ -687,6 +687,7 @@ struct strInstrument
     // Static sample-instrument effects; appended for backward-compatible .pti migration.
     uint8_t sampleRateReduction;
     int8_t toneFilter;
+    uint8_t sampleEffectsReserved[2];
 
     // Bitmasks for envelope[envWtPos / envGranLen].enable so legacy .pti files (which only ever
     // set bit 0 = 0x01 for Wavetable Position) never unintendedly enable Granular Length automation.
@@ -789,6 +790,7 @@ const strInstrument defaultInstrumentParams = {
     .tuneResample = 0,
     .sampleRateReduction = 0,
     .toneFilter = 0,
+    .sampleEffectsReserved = { 0, 0 },
 };
 
 //----------------------------------------------------------------------------------
