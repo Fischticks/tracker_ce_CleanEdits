@@ -49,9 +49,9 @@ make clean && make plus CUSTOM_DEFINES=""                          # no optional
 | Shift + Pattern screen: Pattern Settings (Length, Divider, BPM) | `MOD_PATTERN_SETTINGS` | Enabled | optional: `MOD_PATTERN_BPM` (adds the BPM slider) | [pattern-settings.md](pattern-settings.md) |
 | Sample Playback Boundary Capture | `MOD_SAMPLE_BOUNDARY_CAPTURE` | Enabled | – | [sample-boundary-capture.md](sample-boundary-capture.md) |
 | Lazy Chop | `MOD_LAZY_CHOP` | Enabled | – | [lazy-chop.md](lazy-chop.md) |
-| Shift + Pattern screen: Quantize (live-record quantize, Step Quantize, Note Off, Bypass) | `MOD_SHIFT_PATTERN_QUANTIZE` | **Disabled** (in development) | `MOD_PATTERN_SETTINGS`; optional `MOD_PATTERN_BPM` | [shift-pattern-quantize.md](shift-pattern-quantize.md) |
+| Shift + Pattern screen: Quantize (live-record quantize, Step Quantize, Note Off, Bypass) | `MOD_SHIFT_PATTERN_QUANTIZE` | Enabled (approved by the user) | `MOD_PATTERN_SETTINGS`; optional `MOD_PATTERN_BPM` | [shift-pattern-quantize.md](shift-pattern-quantize.md) |
 
-The first four features are enabled in the default build for Original Tracker, Tracker+ and Tracker Mini. The exact default list is defined only in `custom-firmware.mk`.
+All five features are enabled in the default build for Original Tracker, Tracker+ and Tracker Mini. The exact default list is defined only in `custom-firmware.mk`.
 
 **File-format warning:** with `MOD_PATTERN_BPM` the firmware saves pattern file version 8. Older stock firmware may not load projects
 saved that way; keep a backup of `Projects/` before using such a build on existing projects.

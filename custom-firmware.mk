@@ -21,8 +21,5 @@ CUSTOM_DEFINES ?= \
     -DMOD_PATTERN_BPM \
     -DMOD_PATTERN_SETTINGS \
     -DMOD_SAMPLE_BOUNDARY_CAPTURE \
-    -DMOD_LAZY_CHOP
-
-# In development, DISABLED by default until accepted (explicit approval is needed before it is enabled by default).
-# Requires MOD_PATTERN_SETTINGS. To try it, add -DMOD_SHIFT_PATTERN_QUANTIZE to CUSTOM_DEFINES or pass it on the
-# command line:  make clean && make plus CUSTOM_DEFINES="-DMOD_PATTERN_SETTINGS -DMOD_SHIFT_PATTERN_QUANTIZE"
+    -DMOD_LAZY_CHOP \
+    -DMOD_SHIFT_PATTERN_QUANTIZE

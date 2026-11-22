@@ -1,7 +1,7 @@
 # Shift + Pattern → Quantize — `MOD_SHIFT_PATTERN_QUANTIZE`
 
-**Status: implemented, compiled; NOT tested on hardware or in an emulator. Disabled by default** (new optional feature; explicit
-approval is required before it is enabled by default). Requires `MOD_PATTERN_SETTINGS` (compile-time `#error` otherwise).
+**Status: implemented, compiled; NOT tested on hardware or in an emulator. Enabled by default** (the user approved enabling new
+features by default on 2026-11-22; the flag stays separately switchable). Requires `MOD_PATTERN_SETTINGS` (compile-time `#error` otherwise).
 Works with or without `MOD_PATTERN_BPM`.
 
 ## Source files
@@ -26,7 +26,7 @@ Works with or without `MOD_PATTERN_BPM`.
 | `core/interface/patternEditor/fPatternEdit.cpp` | `moveCursorByStep()` / `moveCursorByStepParallel()` (no-argument forms) go to the next grid position after a quantized note; `cancelPopups()` drops the pending advance |
 | `core/interface/shiftPattern/shiftPattern.h`, `fShiftPattern.cpp`, `gShiftPattern.cpp` | flag-aware category list (Quantize first), per-category redraw, dispatch to the new file |
 | `core/FileManager/WorkspaceProjectLoad.cpp` | `quantizeSettings::resetToDefaults()` after a project is loaded |
-| `custom-firmware.mk` | comment only: the flag is **not** in `CUSTOM_DEFINES` |
+| `custom-firmware.mk` | `-DMOD_SHIFT_PATTERN_QUANTIZE` added to the default `CUSTOM_DEFINES` |
 | `docs/custom-firmware/README.md` | overview |
 
 **Removed:** none.
@@ -90,4 +90,4 @@ Note Off and Quantize stay editable. Labels are abbreviated because the column i
 
 * Everything on-device is untested: category redraw, dimming, list rendering of the 8 divisions, real recording timing.
 * Step Quantize on a multi-track selection or range paste is deliberately untouched.
-* Not enabled by default; enabling needs explicit approval and an edit of `custom-firmware.mk` only.
+* The default list (all five flags together) was not build-tested; each flag was built in the combinations listed in the PR.
