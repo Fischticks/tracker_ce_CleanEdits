@@ -1602,11 +1602,11 @@ void cInstrumentEditor::changeLfoAmount(int idx, int16_t value)
             IE->editorInstrument->lfo[envIdx].amount += fVal;
     }
 
-    if (IE->editorInstrument->envelope[envIdx].loop == 3)
+    if (IE->editorInstrument->envelope[envIdx].loop == 3 && envIdx == envAmp)
     {
+        // The stock amplitude wavetable LFO uses envelope.amount as gain.
+        // Non-amplitude wavetable LFO depth is applied once by setLfoShaping().
         IE->editorInstrument->envelope[envIdx].amount = IE->editorInstrument->lfo[envIdx].amount;
-        if (envIdx == envAmp && IE->editorInstrument->envelope[envIdx].amount < 0.0f)
-            IE->editorInstrument->envelope[envIdx].amount = 0.0f;
     }
 
     // Non-amplitude LFO depth is applied by the active generator in-place. Do not
