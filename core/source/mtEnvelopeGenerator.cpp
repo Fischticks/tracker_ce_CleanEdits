@@ -437,8 +437,10 @@ void envelopeGenerator::calc()
                 tempOutput = amount; // przy attack - 0 powstawał nan i loop dzialal nieprawidlowo -
                                      // andrzej2000
 
+            const float attackMin = (envTemp.killOutput < amount) ? envTemp.killOutput : amount;
+            const float attackMax = (envTemp.killOutput > amount) ? envTemp.killOutput : amount;
             envTemp.tempOutput =
-              isRandom ? randomValue : clamp<float>(tempOutput, envTemp.killOutput, MAX_OUTPUT);
+              isRandom ? randomValue : clamp<float>(tempOutput, attackMin, attackMax);
             envTemp.maxOutput = envTemp.tempOutput;
             break;
 
