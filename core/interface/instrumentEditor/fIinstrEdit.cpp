@@ -2763,6 +2763,7 @@ void cInstrumentEditor::changeControlChangeParam(SampleInstrumentParamsCC param,
         case kWavetablePositionAmount:
         case kGranularPositionAmount:
         case kFinetuneAmount:
+        {
             const uint8_t envIdx = automationDestToEnvSlot(automationIdx);
             const uint8_t loop = IE->editorInstrument->envelope[envIdx].loop;
             if (loop == 1 || loop == 3)
@@ -2770,6 +2771,7 @@ void cInstrumentEditor::changeControlChangeParam(SampleInstrumentParamsCC param,
             else
                 changeEnvAmount(automationIdx, delta);
             break;
+        }
         default: break;
     }
 }
