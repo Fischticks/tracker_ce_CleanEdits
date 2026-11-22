@@ -189,7 +189,7 @@ AUDIO_CORE_RAM audio_block_t* AudioPlayMemory::updateLoopForwardNormal()
                     }
                     if (iPitchCounter >= loopEndPoint)
                     {
-                        iPitchCounter = constrainsInSamples.loopPoint1 + (iPitchCounter - loopEndPoint);
+                        iPitchCounter = keepInLoop(iPitchCounter, constrainsInSamples.loopPoint1, loopEndPoint - 1);
                     }
                 }
                 else
@@ -349,8 +349,7 @@ AUDIO_CORE_RAM audio_block_t* AudioPlayMemory::updateLoopForwardReverse()
                     }
                     if (iPitchCounter <= loopStartPoint)
                     {
-                        iPitchCounter =
-                          constrainsInSamples.loopPoint2 - (loopStartPoint - iPitchCounter);
+                        iPitchCounter = keepInLoop(iPitchCounter, loopStartPoint, constrainsInSamples.loopPoint2 - 1);
                     }
                 }
                 else
