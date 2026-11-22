@@ -351,18 +351,18 @@ static void functUp()
     if (SP->selectedPlace == cShiftPattern::kColCategory)
     {
         SP->changeCategory(-1, false);
+        return;
     }
 #ifdef MOD_SHIFT_PATTERN_QUANTIZE
-        if (SP->category == cShiftPattern::categoryQuantize &&
-            SP->selectedPlace >= cShiftPattern::kQNoteOff && SP->selectedPlace <= cShiftPattern::kQBypass &&
-            SP->selectedPlace != cShiftPattern::kQStrength)
-        {
-            SP->changeSelectedValue(-1);
-            return;
-        }
-#endif
-        SP->changeSelectedValue(1);
+    if (SP->category == cShiftPattern::categoryQuantize &&
+        SP->selectedPlace >= cShiftPattern::kQNoteOff && SP->selectedPlace <= cShiftPattern::kQBypass &&
+        SP->selectedPlace != cShiftPattern::kQStrength)
+    {
+        SP->changeSelectedValue(-1);
+        return;
     }
+#endif
+    SP->changeSelectedValue(1);
 }
 
 static void functDown()
@@ -370,18 +370,18 @@ static void functDown()
     if (SP->selectedPlace == cShiftPattern::kColCategory)
     {
         SP->changeCategory(1, false);
+        return;
     }
 #ifdef MOD_SHIFT_PATTERN_QUANTIZE
-        if (SP->category == cShiftPattern::categoryQuantize &&
-            SP->selectedPlace >= cShiftPattern::kQNoteOff && SP->selectedPlace <= cShiftPattern::kQBypass &&
-            SP->selectedPlace != cShiftPattern::kQStrength)
-        {
-            SP->changeSelectedValue(1);
-            return;
-        }
-#endif
-        SP->changeSelectedValue(-1);
+    if (SP->category == cShiftPattern::categoryQuantize &&
+        SP->selectedPlace >= cShiftPattern::kQNoteOff && SP->selectedPlace <= cShiftPattern::kQBypass &&
+        SP->selectedPlace != cShiftPattern::kQStrength)
+    {
+        SP->changeSelectedValue(1);
+        return;
     }
+#endif
+    SP->changeSelectedValue(-1);
 }
 
 static void functEncoder(int16_t value)
