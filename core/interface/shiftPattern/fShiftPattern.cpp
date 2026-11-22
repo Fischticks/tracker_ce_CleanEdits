@@ -16,6 +16,7 @@ static cShiftPattern* SP = &shiftPattern;
 
 static void functSwitchModule(uint8_t button);
 static void functSelectButton(uint8_t button, uint8_t state);
+static void functPlayAction();
 static void functLeft();
 static void functRight();
 static void functUp();
@@ -105,6 +106,7 @@ void cShiftPattern::start(uint32_t options)
     ip->setButtonObj(interfaceButtonSampleLoad, buttonPress, functSwitchModule);
     ip->setButtonObj(interfaceButtonSong, buttonPress, functSwitchModule);
     ip->setButtonObj(interfaceButtonPattern, buttonPress, functSwitchModule);
+    ip->setButtonObj(interfaceButtonPlay, buttonPress, functPlayAction);
 
     ip->setButtonObj(interfaceButtonMiniMenu, functMenu);
 
@@ -289,6 +291,18 @@ void cShiftPattern::changeSelectedValue(int16_t value)
 // Inputs
 //==============================================================================================================
 
+static void functPlayAction()
+{
+    if (sequencer.getSeqState() == Sequencer::SEQ_STATE_STOP)
+    {
+        sequencer.playPattern();
+    }
+    else
+    {
+        sequencer.stop();
+    }
+}
+
 static void functSwitchModule(uint8_t button)
 {
     SP->eventFunct(eventSwitchModule, SP, &button, 0);
@@ -302,6 +316,16 @@ static void functSelectButton(uint8_t button, uint8_t state)
     {
         return;
     }
+
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    if (SP->category == cShiftPattern::categoryQuantize && SP->selectedPlace == button &&
+        button >= cShiftPattern::kQNoteOff && button <= cShiftPattern::kQBypass &&
+        button != cShiftPattern::kQStrength && SP->isQuantizeColumnEditable(button))
+    {
+        SP->cycleQuantizeValue();
+        return;
+    }
+#endif
 
     if (button == cShiftPattern::kColCategory && SP->selectedPlace == cShiftPattern::kColCategory)
     {
@@ -328,8 +352,15 @@ static void functUp()
     {
         SP->changeCategory(-1, false);
     }
-    else
-    {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+        if (SP->category == cShiftPattern::categoryQuantize &&
+            SP->selectedPlace >= cShiftPattern::kQNoteOff && SP->selectedPlace <= cShiftPattern::kQBypass &&
+            SP->selectedPlace != cShiftPattern::kQStrength)
+        {
+            SP->changeSelectedValue(-1);
+            return;
+        }
+#endif
         SP->changeSelectedValue(1);
     }
 }
@@ -340,8 +371,15 @@ static void functDown()
     {
         SP->changeCategory(1, false);
     }
-    else
-    {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+        if (SP->category == cShiftPattern::categoryQuantize &&
+            SP->selectedPlace >= cShiftPattern::kQNoteOff && SP->selectedPlace <= cShiftPattern::kQBypass &&
+            SP->selectedPlace != cShiftPattern::kQStrength)
+        {
+            SP->changeSelectedValue(1);
+            return;
+        }
+#endif
         SP->changeSelectedValue(-1);
     }
 }

@@ -3,6 +3,10 @@
 
 #include "Platform.h"
 
+#ifdef MOD_PATTERN_SETTINGS
+#include "shiftPattern/shiftPattern.h"
+#endif
+
 #ifdef TRACKER_MINI
 bool fnButtonShiftPressed[4] = { false, false, false, false };
 
@@ -25,6 +29,20 @@ void Interface::potChange(uint8_t n, int16_t value)
 //=======================================================================
 void Interface::buttonChange(uint8_t n, uint8_t value)
 {
+#ifdef MOD_PATTERN_SETTINGS
+    // Global Shift + Pattern shortcut: take priority over each module's Pattern-button mapping.
+    if (n == interfaceButtonPattern && value == buttonPress && onScreenModule != nullptr &&
+        getPlatform()->getButtons()->isButtonPressed(interfaceButtonShift))
+    {
+        if (onScreenModule != &shiftPattern)
+        {
+            deactivateModule(onScreenModule);
+            activateModule(&shiftPattern, 0);
+        }
+        return;
+    }
+#endif
+
 #ifdef TRACKER_MINI
     if (isNavButton(n))
     {

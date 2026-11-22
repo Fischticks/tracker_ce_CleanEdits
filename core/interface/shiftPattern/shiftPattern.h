@@ -77,6 +77,7 @@ class cShiftPattern : public ModuleBase
     void hideQuantizeControls();
     void refreshQuantizeValues();
     void changeQuantizeValue(int16_t value);
+    void cycleQuantizeValue();
     bool isQuantizeColumnEditable(uint8_t column) const; // false for the controls dimmed by Bypass
 
     hControl qToggle[4]; // Note Off, Quantize, Step Quantize, Bypass
