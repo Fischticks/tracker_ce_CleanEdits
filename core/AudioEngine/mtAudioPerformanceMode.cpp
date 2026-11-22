@@ -1311,47 +1311,71 @@ void playerEngine::endPanningLfoRatePerformanceMode()
 }
 void playerEngine::endFinetuneLfoRatePerformanceMode()
 {
-    uint8_t curFineLoop = mtProject.instrument[currentInstrument_idx].envelope[envFinetune].loop;
-    if (trackControlParameter[(int)controlType::sequencerMode][(int)parameterList::lfoFinetune] ||
-        trackControlParameter[(int)controlType::sequencerMode2][(int)parameterList::lfoFinetune])
+    const int performanceType = (int)controlType::performanceMode;
+    const int finetuneParameter = (int)parameterList::lfoFinetune;
+
+    // resetAllFx() may invoke clear callbacks for FX that were never active.
+    // Only resolve the destination when this handler actually owns the source.
+    if (!trackControlParameter[performanceType][finetuneParameter])
+        return;
+
+    // Clear ownership before resolving the fallback so setSyncParamsLFO() sees
+    // the sequencer/instrument source rather than the source being removed.
+    trackControlParameter[performanceType][finetuneParameter] = 0;
+
+    const uint8_t curFineLoop = mtProject.instrument[currentInstrument_idx].envelope[envFinetune].loop;
+    bool fallbackIsLfo = false;
+
+    if (trackControlParameter[(int)controlType::sequencerMode][finetuneParameter] ||
+        trackControlParameter[(int)controlType::sequencerMode2][finetuneParameter])
     {
-        uint8_t targetLoop = (curFineLoop == 3) ? 3 : 1;
+        const uint8_t targetLoop = (curFineLoop == 3) ? 3 : 1;
         calcLfoBasedEnvelope(&lfoBasedEnvelope[envFinetune],
                              &mtProject.instrument[currentInstrument_idx].lfo[envFinetune],
                              currentSeqModValues.lfoFinetuneRate,
                              0,
                              targetLoop);
         initEnvelopesParameters(envFinetune, &lfoBasedEnvelope[envFinetune]);
+        const bool isRandom = (targetLoop == 1) &&
+                              (mtProject.instrument[currentInstrument_idx].lfo[envFinetune].shape ==
+                               lfoShapeRandom);
+        envelopePtr[envFinetune]->setIsRandom(isRandom);
+        fallbackIsLfo = true;
     }
-    else
+    else if (mtProject.instrument[currentInstrument_idx].envelope[envFinetune].enable)
     {
-        if (mtProject.instrument[currentInstrument_idx].envelope[envFinetune].enable)
+        if (curFineLoop == 1 || curFineLoop == 3)
         {
-            if (curFineLoop == 1 || curFineLoop == 3)
-            {
-                calcLfoBasedEnvelope(
-                  &lfoBasedEnvelope[envFinetune],
-                  &mtProject.instrument[currentInstrument_idx].lfo[envFinetune],
-                  mtProject.instrument[currentInstrument_idx].lfo[envFinetune].speed,
-                  0,
-                  curFineLoop);
-                initEnvelopesParameters(envFinetune, &lfoBasedEnvelope[envFinetune]);
-            }
-            else
-            {
-                initEnvelopesParameters(
-                  envFinetune, &mtProject.instrument[currentInstrument_idx].envelope[envFinetune]);
-            }
+            calcLfoBasedEnvelope(&lfoBasedEnvelope[envFinetune],
+                                 &mtProject.instrument[currentInstrument_idx].lfo[envFinetune],
+                                 mtProject.instrument[currentInstrument_idx].lfo[envFinetune].speed,
+                                 0,
+                                 curFineLoop);
+            initEnvelopesParameters(envFinetune, &lfoBasedEnvelope[envFinetune]);
+            const bool isRandom = (curFineLoop == 1) &&
+                                  (mtProject.instrument[currentInstrument_idx].lfo[envFinetune].shape ==
+                                   lfoShapeRandom);
+            envelopePtr[envFinetune]->setIsRandom(isRandom);
+            fallbackIsLfo = true;
         }
         else
         {
-            // No sequencer or instrument fallback remains: release pitch modulation immediately.
-            currentEnvelopeModification[envFinetune] = 0.0f;
-            envelopePtr[envFinetune]->stop();
+            initEnvelopesParameters(
+              envFinetune, &mtProject.instrument[currentInstrument_idx].envelope[envFinetune]);
+            envelopePtr[envFinetune]->setIsRandom(false);
         }
     }
+    else
+    {
+        // No sequencer or instrument fallback remains: release pitch modulation immediately.
+        currentEnvelopeModification[envFinetune] = 0.0f;
+        envelopePtr[envFinetune]->stop();
+        envelopePtr[envFinetune]->setIsRandom(false);
+    }
 
-    trackControlParameter[(int)controlType::performanceMode][(int)parameterList::lfoFinetune] = 0;
-    setSyncParamsLFO(envFinetune);
+    // Do not rebase sync origin for an ADSR fallback or an inactive destination.
+    if (fallbackIsLfo)
+        setSyncParamsLFO(envFinetune);
+
     refreshRegister |= FINETUNE_MASK;
 }
