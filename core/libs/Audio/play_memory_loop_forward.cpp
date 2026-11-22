@@ -189,7 +189,14 @@ AUDIO_CORE_RAM audio_block_t* AudioPlayMemory::updateLoopForwardNormal()
                     }
                     if (iPitchCounter >= loopEndPoint)
                     {
-                        iPitchCounter = keepInLoop(iPitchCounter, constrainsInSamples.loopPoint1, loopEndPoint - 1);
+                        const int32_t loopStart = (int32_t)constrainsInSamples.loopPoint1;
+                        const int32_t loopLength = loopEndPoint - loopStart;
+                        if (loopLength > 0)
+                        {
+                            int32_t overshoot = (iPitchCounter - loopEndPoint) % loopLength;
+                            if (overshoot < 0) overshoot += loopLength;
+                            iPitchCounter = loopStart + overshoot;
+                        }
                     }
                 }
                 else
@@ -292,6 +299,8 @@ AUDIO_CORE_RAM audio_block_t* AudioPlayMemory::updateLoopForwardReverse()
     int32_t castPitchControl;
     float pitchFraction;
     int32_t loopStartPoint = std::max<int>((int32_t)constrainsInSamples.loopPoint1, 0);
+    int32_t loopEndPoint = std::min((int32_t)constrainsInSamples.loopPoint2,
+                                    (int32_t)std::min<int>(length, constrainsInSamples.endPoint));
 
     block = allocate();
     if (!block)
@@ -349,7 +358,13 @@ AUDIO_CORE_RAM audio_block_t* AudioPlayMemory::updateLoopForwardReverse()
                     }
                     if (iPitchCounter <= loopStartPoint)
                     {
-                        iPitchCounter = keepInLoop(iPitchCounter, loopStartPoint, constrainsInSamples.loopPoint2 - 1);
+                        const int32_t loopLength = loopEndPoint - loopStartPoint;
+                        if (loopLength > 0)
+                        {
+                            int32_t overshoot = (loopStartPoint - iPitchCounter - 1) % loopLength;
+                            if (overshoot < 0) overshoot += loopLength;
+                            iPitchCounter = loopEndPoint - 1 - overshoot;
+                        }
                     }
                 }
                 else
