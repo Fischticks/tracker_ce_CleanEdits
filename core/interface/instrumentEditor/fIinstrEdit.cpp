@@ -2671,9 +2671,10 @@ int16_t cInstrumentEditor::getControlChangeDelta(SampleInstrumentParamsCC param,
         case kFinetuneAmount:
         {
             const int envIdx = automationDestToEnvSlot(automationIdx);
-            float amount = IE->editorInstrument->envelope[envIdx].loop
-                             ? IE->editorInstrument->lfo[envIdx].amount
-                             : IE->editorInstrument->envelope[envIdx].amount;
+            const uint8_t loop = IE->editorInstrument->envelope[envIdx].loop;
+            const bool isLfo = (loop == 1 || loop == 3);
+            float amount = isLfo ? IE->editorInstrument->lfo[envIdx].amount
+                                 : IE->editorInstrument->envelope[envIdx].amount;
             float destValue = map((float)cc_value, 0.0f, 127.0f, 0.0f, AMOUNT_MAX);
             if (envIdx != envAmp)
             {
@@ -2762,14 +2763,12 @@ void cInstrumentEditor::changeControlChangeParam(SampleInstrumentParamsCC param,
         case kWavetablePositionAmount:
         case kGranularPositionAmount:
         case kFinetuneAmount:
-            if (IE->editorInstrument->envelope[automationDestToEnvSlot(automationIdx)].loop)
-            {
+            const uint8_t envIdx = automationDestToEnvSlot(automationIdx);
+            const uint8_t loop = IE->editorInstrument->envelope[envIdx].loop;
+            if (loop == 1 || loop == 3)
                 changeLfoAmount(automationIdx, delta);
-            }
             else
-            {
                 changeEnvAmount(automationIdx, delta);
-            }
             break;
         default: break;
     }
