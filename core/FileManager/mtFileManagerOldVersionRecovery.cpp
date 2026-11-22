@@ -483,8 +483,6 @@ static void recoveryInstrumentVersion9()
     strInstrumentFile* receivedInstrument = versionRecovery.getReadedInstrument();
     receivedInstrument->instrumentDataAndHeader.instrument.sampleRateReduction = 0;
     receivedInstrument->instrumentDataAndHeader.instrument.toneFilter = 0;
-    receivedInstrument->instrumentDataAndHeader.instrument.sampleEffectsReserved[0] = 0;
-    receivedInstrument->instrumentDataAndHeader.instrument.sampleEffectsReserved[1] = 0;
 }
 
 static void recoveryInstrumentVersion10()
