@@ -1,0 +1,66 @@
+// Host test of the Step Quantize cursor chain: the same sequence of quantizeGrid calls that
+// Sequencer::stepQuantizeTarget / takeStepQuantizeAdvance perform (the sequencer itself is not linked here).
+// Build: g++ -std=c++17 -Wall -Icore/source tests/host/test_stepQuantize.cpp -o /tmp/tsq && /tmp/tsq
+#include <stdio.h>
+
+#include "quantizeGrid.h"
+
+using namespace quantizeGrid;
+
+static int failures = 0;
+static long checks = 0;
+#define CHECK(c)                                                                                   \
+    do                                                                                             \
+    {                                                                                              \
+        checks++;                                                                                  \
+        if (!(c))                                                                                  \
+        {                                                                                          \
+            if (failures++ < 10)                                                                   \
+                printf("FAIL %s:%d %s\n", __FILE__, __LINE__, #c);                                 \
+        }                                                                                          \
+    } while (0)
+
+int main()
+{
+    for (int q = kQuarterMin; q <= kQuarterMax; q++)
+    {
+        for (int d = 0; d < divisionCount; d++)
+        {
+            for (int len = 1; len <= 128; len += (len < 16 ? 1 : 7))
+            {
+                const int32_t total = len * kTicksPerStep;
+                const int32_t interval = intervalTicks(d, q);
+                // start the chain from every cursor step
+                for (int start = 0; start < len; start++)
+                {
+                    int32_t p = nearest(start * kTicksPerStep, interval, total).wrapped;
+                    int32_t prev = -1;
+                    int steps = 0;
+                    int32_t cursor = start;
+                    for (int n = 0; n < 4 * (total / interval + 2); n++)
+                    {
+                        // validity check of the sequencer: the remembered position belongs to the cursor step
+                        CHECK(stepOf(p) == cursor || n == 0);
+                        CHECK(p >= 0 && p < total);
+                        // a micromove must replay at exactly the offset inside the step
+                        const int32_t off = offsetOf(p);
+                        const int8_t mm = micromoveForOffset(off);
+                        CHECK(micromoveDelayTicks(mm) == off);
+                        // grid positions advance monotonically until the wrap
+                        if (prev >= 0 && p != 0)
+                            CHECK(p - prev == interval || (p - prev) > 0);
+                        prev = p;
+                        const int32_t nx = next(p, interval, total);
+                        // the cursor goes to the step holding nx; re-validating must reproduce nx
+                        cursor = stepOf(nx);
+                        p = nx;
+                        steps++;
+                    }
+                    CHECK(steps > 0);
+                }
+            }
+        }
+    }
+    printf("%ld checks, %d failures\n", checks, failures);
+    return failures ? 1 : 0;
+}

@@ -980,6 +980,18 @@ void cPatternEditor::focusOnActual()
 
 void cPatternEditor::moveCursorByStep()
 {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    // Step Quantize: after a quantized note the cursor goes to the next grid position instead of by Step Jump.
+    uint8_t gridStep;
+    if (sequencer.takeStepQuantizeAdvance(gridStep))
+    {
+        trackerPattern.actualStep = gridStep;
+        PTE->trackerPattern.selectState = 1;
+        PTE->trackerPattern.selectColumn = 0;
+        PTE->isSelectingNow = 0;
+        return;
+    }
+#endif
     moveCursorByStep(0);
 }
 
@@ -1016,6 +1028,19 @@ void cPatternEditor::moveCursorByStepParallel()
         return;
     }
 
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    uint8_t gridStep;
+    if (sequencer.takeStepQuantizeAdvance(gridStep))
+    {
+        trackerPattern.actualStep = gridStep;
+        PTE->trackerPattern.selectStartStep = trackerPattern.actualStep;
+        PTE->trackerPattern.selectEndStep = trackerPattern.actualStep;
+        PTE->trackerPattern.selectState = 2;
+        PTE->trackerPattern.selectColumn = 0;
+        PTE->isSelectingNow = 0;
+        return;
+    }
+#endif
     if (mtProject.values.patternEditStep <= 0)
         return;
 
@@ -1052,6 +1077,9 @@ void cPatternEditor::cancelPopups()
                     {
                         sendSelection();
                         sequencer.setSelectionNote(mtProject.values.lastUsedNote);
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+                        sequencer.cancelStepQuantizeAdvance(); // this path never moved the cursor
+#endif
                     }
                     break;
                 case stepPopupFx:

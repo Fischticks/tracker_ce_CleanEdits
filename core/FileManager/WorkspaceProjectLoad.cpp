@@ -9,6 +9,9 @@
 #endif
 
 #include "log.h"
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+#include "quantizeSettings.h"
+#endif
 
 #include <cstring>
 
@@ -186,6 +189,9 @@ void WorkspaceProjectLoad::loadProjectFromWorkspaceFinish()
 #endif
 
     newFileManager.loadProjectValues();
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    quantizeSettings::resetToDefaults(); // Quantize settings are session-level: defaults on every project load
+#endif
 
     if (newFileManager.needImportModFileAfterNewProject())
     {

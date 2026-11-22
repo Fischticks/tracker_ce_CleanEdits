@@ -21,11 +21,16 @@ class cShiftPattern : public ModuleBase
     cShiftPattern() {}
     ~cShiftPattern() {}
 
-    // Categories, in selector order. Quantize (Live Record) is not part of this firmware yet; when it is added it
-    // takes index 0 and Pattern Settings becomes the second category (see docs/custom-firmware/pattern-settings.md).
+    // Categories, in selector order. Quantize (MOD_SHIFT_PATTERN_QUANTIZE) takes index 0 and Pattern Settings
+    // becomes the second category when it is compiled in.
     enum Category : uint8_t
     {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+        categoryQuantize = 0,
+        categoryPatternSettings,
+#else
         categoryPatternSettings = 0,
+#endif
         categoryCount
     };
 
@@ -57,8 +62,34 @@ class cShiftPattern : public ModuleBase
     void setBpm(uint16_t bpm);
 #endif
 
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    // Columns of the Quantize category (implemented in gShiftPatternQuantize.cpp).
+    static constexpr uint8_t kQNoteOff = 1;
+    static constexpr uint8_t kQQuantize = 2;
+    static constexpr uint8_t kQStepQuantize = 3;
+    static constexpr uint8_t kQDivision = 4;
+    static constexpr uint8_t kQStrength = 5;
+    static constexpr uint8_t kQQuarter = 6;
+    static constexpr uint8_t kQBypass = 7;
+
+    void initQuantizeControls();
+    void showQuantizeScreen();   // shows and fills the Quantize controls (bottom labels included)
+    void hideQuantizeControls();
+    void refreshQuantizeValues();
+    void changeQuantizeValue(int16_t value);
+    bool isQuantizeColumnEditable(uint8_t column) const; // false for the controls dimmed by Bypass
+
+    hControl qToggle[4]; // Note Off, Quantize, Step Quantize, Bypass
+    hControl qDivision = -1;
+    hControl qBar[2]; // Strength, Quarter Note Length
+    strList qToggleList[4];
+    strList qDivisionList;
+    char qStrengthText[8];
+    char qQuarterText[8];
+#endif
+
     uint8_t selectedPlace = kColCategory;
-    uint8_t category = categoryPatternSettings; // kept between visits to the screen
+    uint8_t category = 0; // kept between visits to the screen; the first category in the selector
 
     hControl label[8];
     hControl bgLabel = -1;

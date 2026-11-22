@@ -23,8 +23,25 @@ uint16_t framesPlaces[8][4] = { { 0 + 1, 31, 800 / 8 - 3, 391 },
 
 // Selector entries. The category column is 100 px wide (like the Sample Recorder source list, whose longest entry is
 // "Line In (L)"), so "Pattern Settings" does not fit and was clipped. The selector uses the short name; the full name
-// is the screen title. Only Pattern Settings exists today; Quantize will be added in front of it.
-const char* const categoryNames[cShiftPattern::categoryCount] = { "Pattern" };
+// is the screen title.
+const char* const categoryNames[cShiftPattern::categoryCount] = {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    "Quantize",
+#endif
+    "Pattern"
+};
+
+const char* categoryTitle(uint8_t category)
+{
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    if (category == cShiftPattern::categoryQuantize)
+    {
+        return "Quantize";
+    }
+#endif
+    (void)category;
+    return "Pattern Settings";
+}
 
 // bar position (0..100) of each value
 int16_t barLength(uint8_t length)
@@ -138,6 +155,10 @@ void cShiftPattern::initDisplayControls()
     prop6.y = 29;
     prop6.h = 394;
     blankSpaceCover = display.createControl<cLabel>(&prop6);
+
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    initQuantizeControls();
+#endif
 }
 
 void cShiftPattern::showCategory()
@@ -224,7 +245,7 @@ void cShiftPattern::refreshValues(bool force)
 void cShiftPattern::showDefaultScreen()
 {
     titleBar->show();
-    titleBar->setTitle("Pattern Settings");
+    titleBar->setTitle(categoryTitle(category));
 
     // Same label setup as the Sample Recorder: control name in the label style (Font3), value line (text2) in
     // Font2. setControlStyle() replaces the whole style word, which clears controlStyleShow, so every label has to
@@ -241,8 +262,24 @@ void cShiftPattern::showDefaultScreen()
         display.setControlValue(label[i], 1);
     }
 
-    // columns 3..6 are intentionally empty (reserved for future controls); so is column 7 without Pattern BPM.
-    // Shown as empty inactive buttons.
+    // Only one category's controls are visible at a time.
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    if (category == categoryQuantize)
+    {
+        display.setControlHide(blankSpaceCover);
+        for (uint8_t i = 0; i < 3; i++)
+        {
+            display.setControlHide(barControl[i]);
+        }
+    }
+    else
+    {
+        hideQuantizeControls();
+    }
+#endif
+
+    // Pattern Settings: columns 3..6 are intentionally empty (reserved for future controls); so is column 7
+    // without Pattern BPM. Shown as empty inactive buttons.
     for (uint8_t i = 3; i < 8; i++)
     {
         if (!isColumnSelectable(i))
@@ -255,11 +292,20 @@ void cShiftPattern::showDefaultScreen()
     display.setControlValue(bgLabel, 255);
     display.refreshControl(bgLabel);
 
-    display.setControlShow(blankSpaceCover);
-    display.refreshControl(blankSpaceCover);
-
     showCategory();
-    refreshValues(true);
+
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    if (category == categoryQuantize)
+    {
+        showQuantizeScreen();
+    }
+    else
+#endif
+    {
+        display.setControlShow(blankSpaceCover);
+        display.refreshControl(blankSpaceCover);
+        refreshValues(true);
+    }
 
     for (uint8_t i = 0; i < 8; i++)
     {
