@@ -929,6 +929,10 @@ void cFileManager::setDefaultActiveInstrument(struct strInstrument* targetInstru
     targetInstrument->overdrive = 0;
     targetInstrument->bitDepth = 16;
     targetInstrument->tuneResample = 0;
+    // Preserve the stock +/-1-semitone finetune modulation depth by default.
+    targetInstrument->pitchModSemitones = 0;
+    targetInstrument->pitchModCents = 100;
+    targetInstrument->lfoPolarityMask = 0;
 
     targetInstrument->granular.grainLength = 441;
 
