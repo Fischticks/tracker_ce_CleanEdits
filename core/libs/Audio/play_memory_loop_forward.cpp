@@ -267,7 +267,14 @@ AUDIO_CORE_RAM audio_block_t* AudioPlayMemory::updateLoopForwardNormal()
                     // warunki pointow
                     if (iPitchCounter >= loopEndPoint)
                     {
-                        iPitchCounter = constrainsInSamples.loopPoint1 + (iPitchCounter - loopEndPoint);
+                        const int32_t loopStart = (int32_t)constrainsInSamples.loopPoint1;
+                        const int32_t loopLength = loopEndPoint - loopStart;
+                        if (loopLength > 0)
+                        {
+                            int32_t overshoot = (iPitchCounter - loopEndPoint) % loopLength;
+                            if (overshoot < 0) overshoot += loopLength;
+                            iPitchCounter = loopStart + overshoot;
+                        }
                     }
                     //***************************************************************************************
                     // warunki pętli
@@ -435,8 +442,13 @@ AUDIO_CORE_RAM audio_block_t* AudioPlayMemory::updateLoopForwardReverse()
                     // koniec przetwarzania pitchCountera
                     if (iPitchCounter <= loopStartPoint)
                     {
-                        iPitchCounter =
-                          constrainsInSamples.loopPoint2 - (loopStartPoint - iPitchCounter);
+                        const int32_t loopLength = loopEndPoint - loopStartPoint;
+                        if (loopLength > 0)
+                        {
+                            int32_t overshoot = (loopStartPoint - iPitchCounter - 1) % loopLength;
+                            if (overshoot < 0) overshoot += loopLength;
+                            iPitchCounter = loopEndPoint - 1 - overshoot;
+                        }
                     }
                     //***************************************************************************************
                     // warunki pętli
