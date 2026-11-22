@@ -21,8 +21,10 @@ uint16_t framesPlaces[8][4] = { { 0 + 1, 31, 800 / 8 - 3, 391 },
                                 { (800 / 8) * 6 + 1, 31, 800 / 8 - 3, 391 },
                                 { (800 / 8) * 7 + 1, 31, 800 / 8 - 3, 391 } };
 
-// Only Pattern Settings exists today; Quantize will be added in front of it.
-const char* const categoryNames[cShiftPattern::categoryCount] = { "Pattern Settings" };
+// Selector entries. The category column is 100 px wide (like the Sample Recorder source list, whose longest entry is
+// "Line In (L)"), so "Pattern Settings" does not fit and was clipped. The selector uses the short name; the full name
+// is the screen title. Only Pattern Settings exists today; Quantize will be added in front of it.
+const char* const categoryNames[cShiftPattern::categoryCount] = { "Pattern" };
 
 // bar position (0..100) of each value
 int16_t barLength(uint8_t length)
@@ -224,21 +226,28 @@ void cShiftPattern::showDefaultScreen()
     titleBar->show();
     titleBar->setTitle("Pattern Settings");
 
+    // Same label setup as the Sample Recorder: control name in the label style (Font3), value line (text2) in
+    // Font2. setControlStyle() replaces the whole style word, which clears controlStyleShow, so every label has to
+    // be shown again explicitly (loop at the end) - without that the bottom row stays invisible.
     for (uint8_t i = 0; i < 8; i++)
     {
         display.setControlText(label[i], "");
         display.setControlText2(label[i], "");
         display.setControlStyle(label[i],
-                                controlStyleCenterX | controlStyleCenterY | controlStyleFont2);
+                                controlStyleCenterX | controlStyleCenterY | controlStyleFont3);
+        display.setControlStyle2(label[i],
+                                 controlStyleCenterX | controlStyleCenterY | controlStyleFont2);
         display.setControlColors(label[i], display.getTheme().activeLabelsColors);
         display.setControlValue(label[i], 1);
     }
 
-    // columns 3..6 are intentionally empty (reserved for future controls); so is column 7 without Pattern BPM
+    // columns 3..6 are intentionally empty (reserved for future controls); so is column 7 without Pattern BPM.
+    // Shown as empty inactive buttons.
     for (uint8_t i = 3; i < 8; i++)
     {
         if (!isColumnSelectable(i))
         {
+            display.setControlColors(label[i], display.getTheme().inactiveLabelsColors);
             display.setControlValue(label[i], 0);
         }
     }
@@ -251,6 +260,13 @@ void cShiftPattern::showDefaultScreen()
 
     showCategory();
     refreshValues(true);
+
+    for (uint8_t i = 0; i < 8; i++)
+    {
+        display.setControlShow(label[i]);
+        display.refreshControl(label[i]);
+    }
+
     activateFrame();
 
     display.synchronizeRefresh();
