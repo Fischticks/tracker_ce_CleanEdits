@@ -103,6 +103,23 @@ branching on `category` where the screen draws and handles its columns. No place
    does not.
 6. Not implemented because the specification does not ask for them: transport (Play/Stop) and pad handling on this screen.
 
+## Display repair: missing bottom-row labels and clipped category name
+
+Symptoms on the first build: the category name was cut off in the selector and the bottom row (Length / Divider / BPM names
+and their values) was not visible, although the sliders worked.
+
+Root cause (in `gShiftPattern.cpp`, `showDefaultScreen()`): the eight bottom labels are created without `controlStyleShow`
+and are only drawn after `display.setControlShow()`. The screen assigned texts to them but never showed them, and it called
+`setControlStyle()`, which replaces the whole style word (and so clears the show bit). The Sample Recorder, which this layout
+copies, finishes its screen setup with `setControlShow()` + `refreshControl()` on all eight labels. The text assignments were
+correct; they were simply never drawn.
+
+Fixes: all eight labels are shown and refreshed at the end of `showDefaultScreen()`; the name line uses `Font3` and the value
+line `Font2` through `setControlStyle2()` as in the Sample Recorder; unused columns are drawn as empty inactive buttons. The
+selector entry is the short name **Pattern** (the 100 px column cannot hold "Pattern Settings", the longest Sample Recorder
+entry is "Line In (L)"); the full name remains the screen title. Quantize is planned as the entry in front of it ("Quantize"
+fits). Not verified on hardware.
+
 ## Verification
 
 See the pull request description for the builds and checks that were actually run. Behaviour on hardware has not been tested.
