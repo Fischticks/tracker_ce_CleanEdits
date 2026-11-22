@@ -300,6 +300,7 @@ static void functPlayAction()
     else
     {
         sequencer.stop();
+        patternEditor.trackerPattern.playheadPosition = 0;
     }
 }
 
