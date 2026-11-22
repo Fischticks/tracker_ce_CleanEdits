@@ -753,9 +753,9 @@ void playerEngine::changeFinetuneLfoRatePerformanceMode(int8_t value)
                          0,
                          targetFineLoop);
     initEnvelopesParameters(envFinetune, &lfoBasedEnvelope[envFinetune]);
-    setSyncParamsLFO(envFinetune);
-
     trackControlParameter[(int)controlType::performanceMode][(int)parameterList::lfoFinetune] = 1;
+    setSyncParamsLFO(envFinetune);
+    refreshRegister |= FINETUNE_MASK;
 }
 
 //*******************************************end
@@ -1351,8 +1351,7 @@ void playerEngine::endFinetuneLfoRatePerformanceMode()
         }
     }
 
-    setSyncParamsLFO(envFinetune);
-
     trackControlParameter[(int)controlType::performanceMode][(int)parameterList::lfoFinetune] = 0;
+    setSyncParamsLFO(envFinetune);
     refreshRegister |= FINETUNE_MASK;
 }
