@@ -4,6 +4,8 @@
 #include "config.h"
 #include "mtEnvelopeGenerator.h"
 #include <stdint.h>
+#include <stddef.h>
+#include "mtMidiSlotSelectMapping.h"
 
 //=====================================================================
 //=====================================================================
@@ -1107,6 +1109,14 @@ struct strMtConfig
         uint8_t ccInChannel;
         uint8_t middleC;
         uint8_t slaveClockComp;
+
+        // Keep this extension unconditional so all build variants share one config layout.
+        uint8_t midiSlotSelectEnabled;
+        uint8_t midiSlotSelectMode;
+        uint8_t midiSlotSelectStartNote;
+        uint8_t midiSlotSelectWhiteKeyOctave;
+        uint8_t midiSlotSelectConfigMarker;
+        uint8_t midiSlotSelectReserved;
     } midi;
 
     struct strGlobalValues
@@ -1198,6 +1208,15 @@ struct strMtConfig
     // /\ dodawac nowe wartosci do podstruktur powyżej na końcach każdej ze struktur
     // \/ jesli chcemy dodawac nowe podstruktury wymagana jest edycja mtConfig.cpp
 };
+
+static_assert(sizeof(strMtConfig::strMIDIValues) == 20,
+              "MIDI configuration layout must remain 20 bytes in every build");
+static_assert(offsetof(strMtConfig::strMIDIValues, midiSlotSelectEnabled) == 13);
+static_assert(offsetof(strMtConfig::strMIDIValues, midiSlotSelectMode) == 14);
+static_assert(offsetof(strMtConfig::strMIDIValues, midiSlotSelectStartNote) == 15);
+static_assert(offsetof(strMtConfig::strMIDIValues, midiSlotSelectWhiteKeyOctave) == 16);
+static_assert(offsetof(strMtConfig::strMIDIValues, midiSlotSelectConfigMarker) == 17);
+static_assert(offsetof(strMtConfig::strMIDIValues, midiSlotSelectReserved) == 18);
 
 //----------------------------------------------------------------------------------
 struct strRecentFile

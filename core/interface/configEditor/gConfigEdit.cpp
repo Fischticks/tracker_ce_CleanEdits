@@ -3,6 +3,9 @@
 #include "configEditor.h"
 #include "mtGridEditor.h"
 #include "mtPadsBacklight.h"
+#ifdef MOD_MIDI_SLOT_SELECT
+#include "mtMidiSlotSelect.h"
+#endif
 
 static const uint16_t framesPlacesConfig[4][4] = {
     { (800 / 8) * 0 + 1, 31, 800 / 4 - 3, 391 },
@@ -491,6 +494,9 @@ void cConfigEditor::hideConfigItemDesctription()
 
 void cConfigEditor::reloadConfigLabels()
 {
+#ifdef MOD_MIDI_SLOT_SELECT
+    midiSlotSelectRefreshLabels();
+#endif
     for (uint8_t i = 0; i < 8; i++)
     {
         display.setControlColors(label[i], display.getTheme().activeLabelsColors);
