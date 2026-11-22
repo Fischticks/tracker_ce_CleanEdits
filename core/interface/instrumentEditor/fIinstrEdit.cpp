@@ -2073,8 +2073,11 @@ void cInstrumentEditor::changeParamsSampleRateReduction(int16_t value)
 
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
 
-    if (mtInterface.isInstrumentParamsScreenActive() &&
-        (IE->mode == mtInstrumentEditorMode::mtInstEditModeParams) && IE->isEffectsWindow)
+    bool isParamVisible = mtInterface.isInstrumentParamsScreenActive() &&
+                          (IE->mode == mtInstrumentEditorMode::mtInstEditModeParams) &&
+                          IE->isEffectsWindow;
+
+    if (isParamVisible)
         IE->showParamsSampleRateReduction();
 }
 
@@ -2092,8 +2095,11 @@ void cInstrumentEditor::changeParamsToneFilter(int16_t value)
 
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
 
-    if (mtInterface.isInstrumentParamsScreenActive() &&
-        (IE->mode == mtInstrumentEditorMode::mtInstEditModeParams) && IE->isEffectsWindow)
+    bool isParamVisible = mtInterface.isInstrumentParamsScreenActive() &&
+                          (IE->mode == mtInstrumentEditorMode::mtInstEditModeParams) &&
+                          IE->isEffectsWindow;
+
+    if (isParamVisible)
         IE->showParamsToneFilter();
 }
 
