@@ -17,6 +17,7 @@ static cShiftPattern* SP = &shiftPattern;
 static void functSwitchModule(uint8_t button);
 static void functSelectButton(uint8_t button, uint8_t state);
 static void functPlayAction();
+static void functDeleteAction(uint8_t state);
 static void functLeft();
 static void functRight();
 static void functUp();
@@ -107,6 +108,7 @@ void cShiftPattern::start(uint32_t options)
     ip->setButtonObj(interfaceButtonSong, buttonPress, functSwitchModule);
     ip->setButtonObj(interfaceButtonPattern, buttonPress, functSwitchModule);
     ip->setButtonObj(interfaceButtonPlay, buttonPress, functPlayAction);
+    ip->setButtonObj(interfaceButtonDelete, functDeleteAction);
 
     ip->setButtonObj(interfaceButtonMiniMenu, functMenu);
 
@@ -394,6 +396,24 @@ static void functEncoder(int16_t value)
     else
     {
         SP->changeSelectedValue(value);
+    }
+}
+
+static void functDeleteAction(uint8_t state)
+{
+    if (state != buttonPress)
+    {
+        return;
+    }
+
+    // Delete resets the control whose physical column button is being held.
+    for (uint8_t column = 1; column < 8; column++)
+    {
+        if (getPlatform()->getButtons()->isButtonPressed(interfaceButton0 + column))
+        {
+            SP->resetSelectedValue(column);
+            return;
+        }
     }
 }
 
