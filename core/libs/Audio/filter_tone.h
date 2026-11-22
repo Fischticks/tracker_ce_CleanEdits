@@ -27,7 +27,7 @@ class AudioToneFilter : public AudioStream
     bool isSettled(uint8_t channel) const;
     void clearState(uint8_t channel);
 
-    audio_block_t* inputQueueArray[2] = { nullptr, nullptr };
+    audio_block_t* inputQueueArray[2];
     bool active = false;
     float b0 = 1.0f;
     float b1 = 0.0f;
