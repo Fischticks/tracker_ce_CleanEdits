@@ -2075,6 +2075,7 @@ uint8_t playerEngine ::noteOnWithoutInstrument(std::vector<int16_t*> addr,
     {
         refreshRegister &= (~VOLUME_MASK);
     }
+    refreshRegister &= ~(SAMPLE_RATE_REDUCTION_MASK | TONE_FILTER_MASK);
 
     for (uint8_t i = envPan; i < ACTIVE_ENVELOPES; i++)
     {
