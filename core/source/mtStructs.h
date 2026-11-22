@@ -743,7 +743,7 @@ struct strInstrument
         }
     }
 };
-static_assert(sizeof(strInstrument) == 374, "strInstrument size must remain 374 bytes");
+static_assert(sizeof(strInstrument) == 376, "strInstrument size must remain 376 bytes");
 
 //----------------------------------------------------------------------------------
 const strInstrument defaultInstrumentParams = {
