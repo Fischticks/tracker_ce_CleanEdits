@@ -35,7 +35,7 @@ AudioVoice::AudioVoice()
     {
         connections.push_back(new AudioConnection(&memoryPlayer[channel], &bitDepth[channel]));
         connections.push_back(new AudioConnection(&bitDepth[channel],
-                                                  channel,
+                                                  0,
                                                   &sampleRateReduction,
                                                   channel));
         connections.push_back(new AudioConnection(&sampleRateReduction,
