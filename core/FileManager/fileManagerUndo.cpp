@@ -73,6 +73,9 @@ void cFileManager::restorePatternSelection(uint8_t index)
 
     dest->actualTrack = src->currentTrack;
     dest->actualStep = src->currentStep;
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    sequencer.invalidateStepQuantizePosition();
+#endif
 
     dest->selectState = src->selectState;
 

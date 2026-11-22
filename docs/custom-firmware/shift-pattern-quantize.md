@@ -1,8 +1,15 @@
 # Shift + Pattern → Quantize — `MOD_SHIFT_PATTERN_QUANTIZE`
 
-**Status: implemented, compiled; NOT tested on hardware or in an emulator. Enabled by default** (the user approved enabling new
+**Status: implemented. Enabled by default** (the user approved enabling new
 features by default on 2026-11-22; the flag stays separately switchable). Requires `MOD_PATTERN_SETTINGS` (compile-time `#error` otherwise).
 Works with or without `MOD_PATTERN_BPM`.
+
+**Verification status (by revision):**
+- Earlier revision `99791d5`: compiled and linked without errors (Original, Tracker+, Mini with the flag on; Tracker+ with the flag
+  combinations listed in PR #7) and the host tests passed. This predates the changes below.
+- Later commits (enabled by default, the Step Quantize stale-position fix, the cursor-invalidation hooks and the undo/redo
+  invalidation) have **not been compiled or tested by Claude**; building and testing them is pending maintainer review.
+- Never tested on hardware or in an emulator.
 
 ## Source files
 
