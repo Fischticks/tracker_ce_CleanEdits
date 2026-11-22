@@ -1610,17 +1610,10 @@ void cInstrumentEditor::changeLfoAmount(int idx, int16_t value)
             IE->editorInstrument->envelope[envIdx].amount = 0.0f;
     }
 
-    uint32_t statusByte = 0;
-    switch (envIdx)
-    {
-        case envAmp: statusByte = LFO_AMP_SEND_MASK; break;
-        case envCutoff: statusByte = LFO_FILTER_SEND_MASK; break;
-        case envWtPos: statusByte = LFO_WT_POS_SEND_MASK; break;
-        case envGranPos: statusByte = LFO_GRAN_POS_SEND_MASK; break;
-        case envPan: statusByte = LFO_PANNING_SEND_MASK; break;
-        case envFinetune: statusByte = LFO_FINETUNE_SEND_MASK; break;
-        default: break;
-    }
+    // Non-amplitude LFO depth is applied by the active generator in-place. Do not
+    // reinitialize its sync origin or random sample timing for a depth-only edit.
+    uint32_t statusByte = (envIdx == envAmp) ? LFO_AMP_SEND_MASK
+                                             : ((envIdx == envFinetune) ? FINETUNE_MASK : 0);
     for (int i = 0; i < 8; i++)
     {
         instrumentPlayer[i].setRefreshBit(statusByte);
@@ -3544,17 +3537,9 @@ void cInstrumentEditor::setDefaultLfoAmount()
     IE->editorInstrument->lfo[envSlot].amount =
       defaultInstrumentParams.lfo[envSlot].amount;
 
-    uint32_t statusByte = 0;
-    switch (envSlot)
-    {
-        case envAmp: statusByte = LFO_AMP_SEND_MASK; break;
-        case envCutoff: statusByte = LFO_FILTER_SEND_MASK; break;
-        case envWtPos: statusByte = LFO_WT_POS_SEND_MASK; break;
-        case envGranPos: statusByte = LFO_GRAN_POS_SEND_MASK; break;
-        case envPan: statusByte = LFO_PANNING_SEND_MASK; break;
-        case envFinetune: statusByte = LFO_FINETUNE_SEND_MASK; break;
-        default: break;
-    }
+    // Resetting non-amplitude depth must not rebase LFO synchronization.
+    uint32_t statusByte = (envSlot == envAmp) ? LFO_AMP_SEND_MASK
+                                              : ((envSlot == envFinetune) ? FINETUNE_MASK : 0);
     for (int i = 0; i < 8; i++)
     {
         instrumentPlayer[i].setRefreshBit(statusByte);
@@ -3750,20 +3735,6 @@ uint8_t cInstrumentEditor::getAmountSub()
         amountSubLoop != editorInstrument->envelope[envSlot].loop)
         amountSub = kSubAmount;
     return amountSub;
-}
-
-static uint32_t lfoSendMaskForSlot(int envSlot)
-{
-    switch (envSlot)
-    {
-        case envAmp: return LFO_AMP_SEND_MASK;
-        case envCutoff: return LFO_FILTER_SEND_MASK;
-        case envWtPos: return LFO_WT_POS_SEND_MASK;
-        case envGranPos: return LFO_GRAN_POS_SEND_MASK;
-        case envPan: return LFO_PANNING_SEND_MASK;
-        case envFinetune: return LFO_FINETUNE_SEND_MASK;
-        default: return 0;
-    }
 }
 
 void cInstrumentEditor::advanceAmountSub()
