@@ -63,9 +63,18 @@ uint8_t playerEngine ::noteOn(uint8_t instr_idx, int8_t note, int8_t _velocity)
 
     for (uint8_t i = envPan; i < ACTIVE_ENVELOPES; i++)
     {
-        if (mtProject.instrument[instr_idx].isEnvEnabled(i))
+        if (mtProject.instrument[instr_idx].isEnvEnabled(i) ||
+            (i == envFinetune &&
+             trackControlParameter[(int)controlType::performanceMode]
+                                  [(int)parameterList::lfoFinetune]))
         {
-            bool isRandom = (mtProject.instrument[instr_idx].envelope[i].loop == 1) &&
+            const uint8_t activeLoop =
+              (i == envFinetune &&
+               trackControlParameter[(int)controlType::performanceMode]
+                                    [(int)parameterList::lfoFinetune])
+                ? lfoBasedEnvelope[i].loop
+                : mtProject.instrument[instr_idx].envelope[i].loop;
+            bool isRandom = (activeLoop == 1) &&
                             (mtProject.instrument[instr_idx].lfo[i].shape == lfoShapeRandom);
             envelopePtr[i]->setIsRandom(isRandom);
             envelopePtr[i]->setWavetableParams(
@@ -198,7 +207,13 @@ AUDIO_CORE_RAM uint8_t playerEngine ::noteOn(uint8_t instr_idx,
     {
         if (isActiveEnvelope(i))
         {
-            bool isRandom = (mtProject.instrument[instr_idx].envelope[i].loop == 1) &&
+            const uint8_t activeLoop =
+              (i == envFinetune &&
+               trackControlParameter[(int)controlType::performanceMode]
+                                    [(int)parameterList::lfoFinetune])
+                ? lfoBasedEnvelope[i].loop
+                : mtProject.instrument[instr_idx].envelope[i].loop;
+            bool isRandom = (activeLoop == 1) &&
                             (mtProject.instrument[instr_idx].lfo[i].shape == lfoShapeRandom);
             envelopePtr[i]->setIsRandom(isRandom);
             if (i != envCutoff ||
@@ -553,7 +568,14 @@ void playerEngine::handleInitNoteOnEnvelope(uint8_t n)
     else
     {
         currentEnvelopeModification[n] = 0;
-        if (mtProject.instrument[currentInstrument_idx].isEnvEnabled(n))
+        if (n == envFinetune &&
+            trackControlParameter[(int)controlType::performanceMode]
+                                 [(int)parameterList::lfoFinetune])
+        {
+            // Performance finetune LFO is authoritative even when the instrument envelope is disabled.
+            changeFinetuneLfoRatePerformanceMode(performanceMod.lfoFinetuneRate);
+        }
+        else if (mtProject.instrument[currentInstrument_idx].isEnvEnabled(n))
         {
             uint8_t curLoop = mtProject.instrument[currentInstrument_idx].envelope[n].loop;
             if (curLoop == 1 || curLoop == 3)
@@ -583,9 +605,17 @@ void playerEngine::handleInitFxNoteOnEnvelope(uint8_t n)
     }
     else
     {
-        if ((!trackControlParameter[(int)controlType::sequencerMode][envelopesControlValue[n]]) &&
-            (!trackControlParameter[(int)controlType::sequencerMode2][envelopesControlValue[n]]) &&
-            (!trackControlParameter[(int)controlType::performanceMode][envelopesControlValue[n]]))
+        const bool finetunePerformanceOverride =
+          (n == envFinetune) &&
+          trackControlParameter[(int)controlType::performanceMode]
+                               [(int)parameterList::lfoFinetune];
+        if (finetunePerformanceOverride)
+        {
+            handleInitNoteOnEnvelope(n);
+        }
+        else if ((!trackControlParameter[(int)controlType::sequencerMode][envelopesControlValue[n]]) &&
+                 (!trackControlParameter[(int)controlType::sequencerMode2][envelopesControlValue[n]]) &&
+                 (!trackControlParameter[(int)controlType::performanceMode][envelopesControlValue[n]]))
         {
             handleInitNoteOnEnvelope(n);
         }
@@ -629,7 +659,7 @@ void playerEngine::handleInitFxNoteOnEnvelope(uint8_t n)
                             changePositionLfoRatePerformanceMode(performanceMod.lfoPanningRate);
                             break;
                         case envFinetune:
-                            changePositionLfoRatePerformanceMode(performanceMod.lfoFinetuneRate);
+                            // Initialized above through the dedicated finetune source path.
                             break;
                     }
                 }
