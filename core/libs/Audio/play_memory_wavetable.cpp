@@ -208,7 +208,7 @@ AUDIO_CORE_FLASH audio_block_t* AudioPlayMemory::updateWavetable()
 
                 if (iPitchCounter >= wavetableWindowSize)
                 {
-                    iPitchCounter -= wavetableWindowSize;
+                    iPitchCounter %= wavetableWindowSize;
                 }
             }
         }
