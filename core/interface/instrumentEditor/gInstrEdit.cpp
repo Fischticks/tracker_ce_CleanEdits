@@ -1413,8 +1413,53 @@ void cInstrumentEditor::showEnvRelease()
     display.refreshControl(barControl[6]);
 }
 
+bool cInstrumentEditor::showAmountSub()
+{
+    const uint8_t sub = getAmountSub();
+    const uint8_t col = amountColumn();
+    const uint32_t shadow = (display.getTheme().bottomScreenShadow > 0 ? controlStyleBottomShadow : 0);
+    const uint32_t gradient = (display.getTheme().barShadow > 0 ? controlStyleGradient : 0);
+    const uint32_t baseStyle = controlStyleShow | controlStyleBackground | shadow | gradient;
+    if (sub == kSubAmount)
+    {
+        display.setControlText(label[col], "Amount");
+        display.setControlStyle(barControl[col], baseStyle | controlStyleValue_0_100);
+        display.setControlShow(barControl[col]);
+        return false;
+    }
+    const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
+    if (sub == kSubPolarity)
+    {
+        const bool unipolar = ((editorInstrument->lfoPolarityMask >> envSlot) & 1u) != 0;
+        display.setControlText(label[col], "Polarity");
+        snprintf(labelText[col], sizeof(labelText[col]), "%s", unipolar ? "Unipolar" : "Bipolar");
+        display.setControlHide(barControl[col]);
+    }
+    else
+    {
+        const int semitones = editorInstrument->pitchModSemitones;
+        const int cents = editorInstrument->pitchModCents;
+        const float combined = (semitones * 100 + cents) / 100.0f;
+        display.setControlText(label[col], sub == kSubPitchSemitones ? "Pitch st" : "Pitch ct");
+        if (combined == 0.0f)
+            snprintf(labelText[col], sizeof(labelText[col]), "0.00 st");
+        else
+            snprintf(labelText[col], sizeof(labelText[col]), "%+.2f st", (double)combined);
+        display.setControlStyle(barControl[col], baseStyle | controlStyleValueLeftRight_100_100);
+        display.setControlShow(barControl[col]);
+        display.setControlValue(barControl[col],
+                                sub == kSubPitchSemitones ? (semitones * 100) / 24 : cents);
+        display.refreshControl(barControl[col]);
+    }
+    display.setControlText2(label[col], labelText[col]);
+    display.refreshControl(label[col]);
+    return true;
+}
+
 void cInstrumentEditor::showEnvAmount()
 {
+    if (showAmountSub())
+        return;
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
     snprintf(labelText[7],
              sizeof(labelText[7]),
@@ -1481,12 +1526,29 @@ void cInstrumentEditor::showLfoSpeed()
 }
 void cInstrumentEditor::showLfoAmount()
 {
+    if (showAmountSub())
+        return;
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
     uint8_t col = (editorInstrument->envelope[envSlot].loop == 3) ? 7 : 5;
-    snprintf(labelText[col],
-             sizeof(labelText[col]),
-             "%.0f",
-             (float)(editorInstrument->lfo[envSlot].amount * 100));
+    if (envSlot != envAmp)
+    {
+        const float percent = editorInstrument->lfo[envSlot].amount * 100.0f;
+        if (percent == 0.0f)
+            snprintf(labelText[col], sizeof(labelText[col]), "0");
+        else
+            snprintf(labelText[col], sizeof(labelText[col]), "%+.0f", (double)percent);
+        display.setControlStyle(
+          barControl[col],
+          controlStyleShow | controlStyleValueLeftRight_100_100 | controlStyleBackground);
+    }
+    else
+    {
+        snprintf(labelText[col],
+                 sizeof(labelText[col]),
+                 "%.0f",
+                 (float)(editorInstrument->lfo[envSlot].amount * 100));
+        display.setControlStyle(barControl[col], controlStyleShow | controlStyleValue_0_100 | controlStyleBackground);
+    }
     display.setControlText2(label[col], labelText[col]);
     display.refreshControl(label[col]);
 
