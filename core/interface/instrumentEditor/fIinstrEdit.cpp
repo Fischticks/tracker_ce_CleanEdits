@@ -3769,40 +3769,53 @@ void cInstrumentEditor::changeAmountSub(int16_t value)
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
     const uint8_t sub = getAmountSub();
     uint32_t sendBit = 0;
+    bool changed = false;
     switch (sub)
     {
         case kSubPolarity:
             if (value != 0)
             {
                 editorInstrument->lfoPolarityMask ^= (uint8_t)(1u << envSlot);
-                sendBit = lfoSendMaskForSlot(envSlot);
+                changed = true;
+                // The active generator picks up polarity in-place. Do not reinitialize its
+                // waveform or synchronization origin.
+                if (envSlot == envFinetune)
+                    sendBit = FINETUNE_MASK;
             }
             break;
         case kSubPitchSemitones:
         {
-            const int next = editorInstrument->pitchModSemitones + value;
-            editorInstrument->pitchModSemitones = (int8_t)clamp<int>(next, -24, 24);
-            sendBit = FINETUNE_MASK;
+            const int next = clamp<int>(editorInstrument->pitchModSemitones + value, -24, 24);
+            if (next != editorInstrument->pitchModSemitones)
+            {
+                editorInstrument->pitchModSemitones = (int8_t)next;
+                sendBit = FINETUNE_MASK;
+                changed = true;
+            }
             break;
         }
         case kSubPitchCents:
         {
-            const int next = editorInstrument->pitchModCents + value;
-            editorInstrument->pitchModCents = (int8_t)clamp<int>(next, -100, 100);
-            sendBit = FINETUNE_MASK;
+            const int next = clamp<int>(editorInstrument->pitchModCents + value, -100, 100);
+            if (next != editorInstrument->pitchModCents)
+            {
+                editorInstrument->pitchModCents = (int8_t)next;
+                sendBit = FINETUNE_MASK;
+                changed = true;
+            }
             break;
         }
         default: break;
     }
-    if (envSlot == envFinetune)
-        sendBit |= FINETUNE_MASK;
 
     if (sendBit)
     {
         for (int i = 0; i < 8; ++i)
             instrumentPlayer[i].setRefreshBit(sendBit);
-        newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     }
+    if (changed)
+        newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+
     const uint8_t loop = editorInstrument->envelope[envSlot].loop;
     if (loop == 1 || loop == 3) showLfoAmount();
     else showEnvAmount();
