@@ -8,7 +8,7 @@ constexpr uint8_t kInstrumentFileType = 1;
 constexpr uint8_t kFirstInstrumentFileVersion = 1;
 // Firmware versions before v8 used a four-byte-smaller serialized instrument layout.
 constexpr uint8_t kFirstFullSizeInstrumentVersion = 8;
-constexpr uint16_t kAppendedInstrumentFieldsSize = 2;
+constexpr uint16_t kInstrumentStructureGrowth = 4; // Two parameter bytes plus two bytes of tail alignment.
 constexpr uint16_t kPreVersion8LayoutDifference = 4;
 
 uint16_t readUint16(const uint8_t* data)
@@ -47,8 +47,8 @@ bool validate(const uint8_t* data,
 
     const uint16_t instrumentSize = readUint16(data + 12);
     const uint16_t previousInstrumentSize =
-      currentInstrumentSize >= kAppendedInstrumentFieldsSize
-        ? currentInstrumentSize - kAppendedInstrumentFieldsSize
+      currentInstrumentSize >= kInstrumentStructureGrowth
+        ? currentInstrumentSize - kInstrumentStructureGrowth
         : 0;
     const uint16_t preVersion8InstrumentSize =
       previousInstrumentSize >= kPreVersion8LayoutDifference
