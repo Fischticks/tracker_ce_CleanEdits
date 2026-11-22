@@ -9,6 +9,7 @@ constexpr uint8_t kFirstInstrumentFileVersion = 1;
 // Firmware versions before v8 used a four-byte-smaller serialized instrument layout.
 constexpr uint8_t kFirstFullSizeInstrumentVersion = 8;
 constexpr uint16_t kVersion8To9InstrumentSize = 372;
+constexpr uint16_t kVersion10InstrumentSize = 376;
 constexpr uint16_t kPreVersion8InstrumentSize = 368;
 
 uint16_t readUint16(const uint8_t* data)
@@ -47,8 +48,9 @@ bool validate(const uint8_t* data,
 
     const uint16_t instrumentSize = readUint16(data + 12);
     const bool knownLegacySize =
-      (version >= kFirstFullSizeInstrumentVersion && version < currentFileVersion &&
+      (version >= kFirstFullSizeInstrumentVersion && version <= 9 &&
        instrumentSize == kVersion8To9InstrumentSize) ||
+      (version == 10 && instrumentSize == kVersion10InstrumentSize) ||
       (version < kFirstFullSizeInstrumentVersion &&
        instrumentSize == kPreVersion8InstrumentSize);
 
