@@ -48,6 +48,7 @@ class cShiftPattern : public ModuleBase
 
     void changeCategory(int16_t value, bool rollOver);
     void changeSelectedValue(int16_t value);
+    void resetSelectedValue(uint8_t column);
     void moveSelection(int8_t direction);
     void selectColumn(uint8_t column);
     bool isColumnSelectable(uint8_t column) const;
