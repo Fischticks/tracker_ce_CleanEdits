@@ -6,6 +6,9 @@
 
 #include "core/interfaceMenuPopup.h"
 #include "patternEditor/patternEditor.h"
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+#include "quantizeSettings.h"
+#endif
 
 #include "fileManager.h"
 #include "mtSequencer.h"
@@ -219,6 +222,50 @@ void cShiftPattern::changeCategory(int16_t value, bool rollOver)
 #endif
 }
 
+void cShiftPattern::resetSelectedValue(uint8_t column)
+{
+    if (column == kColCategory)
+    {
+        return;
+    }
+
+    selectedPlace = column;
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    if (category == categoryQuantize)
+    {
+        if (!isQuantizeColumnEditable(column))
+        {
+            return;
+        }
+        quantizeSettings::Values& v = quantizeSettings::values;
+        const quantizeSettings::Values defaults;
+        switch (column)
+        {
+            case kQNoteOff: v.noteOff = defaults.noteOff; break;
+            case kQQuantize: v.quantize = defaults.quantize; break;
+            case kQStepQuantize: v.stepQuantize = defaults.stepQuantize; break;
+            case kQDivision: v.division = defaults.division; break;
+            case kQStrength: v.strength = defaults.strength; break;
+            case kQQuarter: v.quarter = defaults.quarter; break;
+            case kQBypass: v.bypass = defaults.bypass; break;
+            default: return;
+        }
+        refreshQuantizeValues();
+        return;
+    }
+#endif
+    switch (column)
+    {
+        case kColLength: setPatternLength(32); break;
+        case kColDivider: setPatternDivider(4); break;
+#ifdef MOD_PATTERN_BPM
+        case kColBpm: setBpm(0); break; // OFF follows the Project BPM
+#endif
+        default: return;
+    }
+    refreshValues(false);
+}
+
 void cShiftPattern::changeSelectedValue(int16_t value)
 {
 #ifdef MOD_SHIFT_PATTERN_QUANTIZE
@@ -409,7 +456,7 @@ static void functDeleteAction(uint8_t state)
     // Delete resets the control whose physical column button is being held.
     for (uint8_t column = 1; column < 8; column++)
     {
-        if (getPlatform()->getButtons()->isButtonPressed(interfaceButton0 + column))
+        if (mtInterface.getPlatform()->getButtons()->isButtonPressed(interfaceButton0 + column))
         {
             SP->resetSelectedValue(column);
             return;
