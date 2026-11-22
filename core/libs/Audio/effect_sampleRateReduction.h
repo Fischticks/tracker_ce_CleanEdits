@@ -23,7 +23,7 @@ class AudioSampleRateReduction : public AudioStream
     static float effectiveRateHz(uint8_t value);
 
   private:
-    audio_block_t* inputQueueArray[2] = { nullptr, nullptr };
+    audio_block_t* inputQueueArray[2];
     uint32_t phaseIncrement = 0;
     uint32_t phase = 0;
     bool captureNext = true;
