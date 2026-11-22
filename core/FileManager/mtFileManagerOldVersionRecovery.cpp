@@ -35,6 +35,7 @@ static void recoveryInstrumentVersion6();
 static void recoveryInstrumentVersion7();
 static void recoveryInstrumentVersion8();
 static void recoveryInstrumentVersion9();
+static void recoveryInstrumentVersion10();
 
 mtVersionRecovery versionRecovery;
 
@@ -70,6 +71,7 @@ mtVersionRecovery::mtVersionRecovery()
     recoveryInstrumentFunction[6] = recoveryInstrumentVersion7;
     recoveryInstrumentFunction[7] = recoveryInstrumentVersion8;
     recoveryInstrumentFunction[8] = recoveryInstrumentVersion9;
+    recoveryInstrumentFunction[9] = recoveryInstrumentVersion10;
 }
 // zwraca wskaznik do aktywnego odczytanego projektu
 strMtProjectRemote* mtVersionRecovery::getReadedProject()
@@ -481,6 +483,16 @@ static void recoveryInstrumentVersion9()
     strInstrumentFile* receivedInstrument = versionRecovery.getReadedInstrument();
     receivedInstrument->instrumentDataAndHeader.instrument.sampleRateReduction = 0;
     receivedInstrument->instrumentDataAndHeader.instrument.toneFilter = 0;
-    receivedInstrument->instrumentDataAndHeader.instrument.sampleEffectsReserved[0] = 0;
-    receivedInstrument->instrumentDataAndHeader.instrument.sampleEffectsReserved[1] = 0;
+}
+
+static void recoveryInstrumentVersion10()
+{
+    strInstrument* instrument = &versionRecovery.getReadedInstrument()->instrumentDataAndHeader.instrument;
+    // Preserve Sample FX values from v10; initialize only the new Modulation fields.
+    instrument->pitchModSemitones = 0;
+    instrument->pitchModCents = 100;
+    instrument->lfoPolarityMask = 0;
+    instrument->sampleModReserved[0] = 0;
+    instrument->sampleModReserved[1] = 0;
+    instrument->sampleModReserved[2] = 0;
 }

@@ -145,6 +145,26 @@ AUDIO_CORE_RAM void AudioPlayMemory::update(void)
         return;
     }
 
+    // Apply pitch modulation as a temporary ratio around the current base pitch.
+    const bool pmApply = pitchModActive;
+    float pmBase = 0.0f, pmBaseSmooth = 0.0f, pmEffStart = 0.0f, pmEffSmooth = 0.0f;
+    if (pmApply)
+    {
+        const float* pmTbl = (currentPlayMode != playModeWavetable) ? notes : wt_notes;
+        pitchBoundHiScale = kPitchEffHiScale;
+        pitchBoundLoScale = kPitchEffLoScale;
+        pmBase = pitchControl;
+        pmBaseSmooth = pitchSmoothingControl;
+        float effectivePitch = pmBase * pitchModulationRatio;
+        const float hi = pmTbl[MAX_NOTE - 1] * kPitchEffHiScale;
+        const float lo = pmTbl[MIN_NOTE] * kPitchEffLoScale;
+        effectivePitch = effectivePitch > hi ? hi : (effectivePitch < lo ? lo : effectivePitch);
+        pmEffStart = effectivePitch;
+        pmEffSmooth = pmBaseSmooth * pitchModulationRatio;
+        pitchControl = effectivePitch;
+        pitchSmoothingControl = pmEffSmooth;
+    }
+
     audio_block_t* block = nullptr;
     switch (currentPlayMode)
     {
@@ -159,12 +179,34 @@ AUDIO_CORE_RAM void AudioPlayMemory::update(void)
         default: break;
     }
 
+    if (pmApply)
+    {
+        pitchControl = pmBase + (pitchControl - pmEffStart) / pitchModulationRatio;
+        pitchSmoothingControl = (pitchSmoothingControl == pmEffSmooth)
+                                  ? pmBaseSmooth
+                                  : pitchSmoothingControl / pitchModulationRatio;
+        pitchBoundHiScale = 1.0f;
+        pitchBoundLoScale = 1.0f;
+    }
+
     if (isHeadroomEnabled)
     {
         lowerVolume3dB(block);
     }
 
     envelopeUpdate(block);
+}
+
+void AudioPlayMemory::setPitchModulationCents(float cents)
+{
+    if (cents > kPitchModMaxCents) cents = kPitchModMaxCents;
+    else if (cents < -kPitchModMaxCents) cents = -kPitchModMaxCents;
+    const float ratio = (cents == 0.0f) ? 1.0f : exp2f(cents * (1.0f / 1200.0f));
+    // This setter is reached through playerEngine::update() inside the audio callback.
+    // Playback reads the same state later in that callback, so no interrupt toggle is needed.
+    // In particular, do not re-enable the audio IRQ from inside its own callback.
+    pitchModulationRatio = ratio;
+    pitchModActive = (cents != 0.0f);
 }
 
 AUDIO_CORE_RAM void AudioPlayMemory::lowerVolume3dB(audio_block_t* block)
@@ -192,6 +234,8 @@ void AudioPlayMemory::init(Timer* timer, int channel, int voiceIdx)
 //**************************************************************************************PLAY
 AUDIO_CORE_FLASH uint8_t AudioPlayMemory::play(uint8_t instrIdx, int8_t note)
 {
+    pitchModulationRatio = 1.0f;
+    pitchModActive = false;
     // The play functions limit the note at the top only, and index the note table with it.
     if (note < MIN_NOTE)
         note = MIN_NOTE;
@@ -228,6 +272,8 @@ AUDIO_CORE_FLASH void AudioPlayMemory::setSlideOnPlay(bool upOrDown, uint8_t dst
 
 uint8_t AudioPlayMemory::playForPrev(uint8_t instr_idx, int8_t n)
 {
+    pitchModulationRatio = 1.0f;
+    pitchModActive = false;
     tuneForceFlag = 0;
     pointsForceFlag = 0;
     glideForceFlag = 0;
@@ -246,6 +292,8 @@ uint8_t AudioPlayMemory::playForPrev(uint8_t instr_idx, int8_t n)
 
 uint8_t AudioPlayMemory::playForPrev(int16_t* addr, uint32_t len, uint8_t type)
 {
+    pitchModulationRatio = 1.0f;
+    pitchModActive = false;
     uint32_t startPoint, endPoint;
     int8_t note = 60;
     playing = 0;
@@ -360,6 +408,8 @@ uint8_t AudioPlayMemory::playForPrev(int16_t* addr, uint32_t len, uint8_t type)
 
 uint8_t AudioPlayMemory::playForPrev(int16_t* addr, uint32_t len, uint8_t n, uint8_t type)
 {
+    pitchModulationRatio = 1.0f;
+    pitchModActive = false;
     uint32_t startPoint, endPoint;
     int8_t note = n;
     playing = 0;

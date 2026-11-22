@@ -60,6 +60,14 @@ class envelopeGenerator
 
     float getOut();
     float getLastOut();
+    // Output shaping changes never reset the oscillator phase.
+    void setLfoShaping(float signedDepth, bool unipolar)
+    {
+        if (signedDepth > 1.0f) signedDepth = 1.0f;
+        else if (signedDepth < -1.0f) signedDepth = -1.0f;
+        lfoDepth = signedDepth;
+        lfoUnipolar = unipolar;
+    }
     // float calcOutput();
     uint8_t getPhase() { return envTemp.phase; }
     uint8_t isKeyPressed() { return keyPressed; }
@@ -125,6 +133,9 @@ class envelopeGenerator
 
     float amount;
     float sustain;
+    float lfoDepth = 1.0f;
+    bool lfoUnipolar = false;
+    float shapeLfoOutput(float canonical) const;
 
     // time-dependent values
     float delay;

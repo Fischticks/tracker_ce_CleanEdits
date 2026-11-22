@@ -189,7 +189,14 @@ AUDIO_CORE_RAM audio_block_t* AudioPlayMemory::updateLoopForwardNormal()
                     }
                     if (iPitchCounter >= loopEndPoint)
                     {
-                        iPitchCounter = constrainsInSamples.loopPoint1 + (iPitchCounter - loopEndPoint);
+                        const int32_t loopStart = (int32_t)constrainsInSamples.loopPoint1;
+                        const int32_t loopLength = loopEndPoint - loopStart;
+                        if (loopLength > 0)
+                        {
+                            int32_t overshoot = (iPitchCounter - loopEndPoint) % loopLength;
+                            if (overshoot < 0) overshoot += loopLength;
+                            iPitchCounter = loopStart + overshoot;
+                        }
                     }
                 }
                 else
@@ -217,14 +224,14 @@ AUDIO_CORE_RAM audio_block_t* AudioPlayMemory::updateLoopForwardNormal()
                         if (pitchSmoothingControlCounter <= constrainsInSamples.pitchSmoothing)
                         {
                             pitchControl += pitchSmoothingControl;
-                            if (pitchControl > notes[MAX_NOTE - 1])
+                            if (pitchControl > PM_PITCH_HI(notes))
                             {
-                                pitchControl = notes[MAX_NOTE - 1];
+                                pitchControl = PM_PITCH_HI(notes);
                                 pitchSmoothingControlCounter = constrainsInSamples.pitchSmoothing;
                             }
-                            else if (pitchControl < notes[MIN_NOTE])
+                            else if (pitchControl < PM_PITCH_LO(notes))
                             {
-                                pitchControl = notes[MIN_NOTE];
+                                pitchControl = PM_PITCH_LO(notes);
                                 pitchSmoothingControlCounter = constrainsInSamples.pitchSmoothing;
                             }
                             castPitchControl = (int32_t)pitchControl;
@@ -260,7 +267,14 @@ AUDIO_CORE_RAM audio_block_t* AudioPlayMemory::updateLoopForwardNormal()
                     // warunki pointow
                     if (iPitchCounter >= loopEndPoint)
                     {
-                        iPitchCounter = constrainsInSamples.loopPoint1 + (iPitchCounter - loopEndPoint);
+                        const int32_t loopStart = (int32_t)constrainsInSamples.loopPoint1;
+                        const int32_t loopLength = loopEndPoint - loopStart;
+                        if (loopLength > 0)
+                        {
+                            int32_t overshoot = (iPitchCounter - loopEndPoint) % loopLength;
+                            if (overshoot < 0) overshoot += loopLength;
+                            iPitchCounter = loopStart + overshoot;
+                        }
                     }
                     //***************************************************************************************
                     // warunki pętli
@@ -292,6 +306,8 @@ AUDIO_CORE_RAM audio_block_t* AudioPlayMemory::updateLoopForwardReverse()
     int32_t castPitchControl;
     float pitchFraction;
     int32_t loopStartPoint = std::max<int>((int32_t)constrainsInSamples.loopPoint1, 0);
+    int32_t loopEndPoint = std::min((int32_t)constrainsInSamples.loopPoint2,
+                                    (int32_t)std::min<int>(length, constrainsInSamples.endPoint));
 
     block = allocate();
     if (!block)
@@ -349,8 +365,13 @@ AUDIO_CORE_RAM audio_block_t* AudioPlayMemory::updateLoopForwardReverse()
                     }
                     if (iPitchCounter <= loopStartPoint)
                     {
-                        iPitchCounter =
-                          constrainsInSamples.loopPoint2 - (loopStartPoint - iPitchCounter);
+                        const int32_t loopLength = loopEndPoint - loopStartPoint;
+                        if (loopLength > 0)
+                        {
+                            int32_t overshoot = (loopStartPoint - iPitchCounter - 1) % loopLength;
+                            if (overshoot < 0) overshoot += loopLength;
+                            iPitchCounter = loopEndPoint - 1 - overshoot;
+                        }
                     }
                 }
                 else
@@ -378,14 +399,14 @@ AUDIO_CORE_RAM audio_block_t* AudioPlayMemory::updateLoopForwardReverse()
                         if (pitchSmoothingControlCounter <= constrainsInSamples.pitchSmoothing)
                         {
                             pitchControl += pitchSmoothingControl;
-                            if (pitchControl > notes[MAX_NOTE - 1])
+                            if (pitchControl > PM_PITCH_HI(notes))
                             {
-                                pitchControl = notes[MAX_NOTE - 1];
+                                pitchControl = PM_PITCH_HI(notes);
                                 pitchSmoothingControlCounter = constrainsInSamples.pitchSmoothing;
                             }
-                            else if (pitchControl < notes[MIN_NOTE])
+                            else if (pitchControl < PM_PITCH_LO(notes))
                             {
-                                pitchControl = notes[MIN_NOTE];
+                                pitchControl = PM_PITCH_LO(notes);
                                 pitchSmoothingControlCounter = constrainsInSamples.pitchSmoothing;
                             }
                             castPitchControl = (int32_t)-pitchControl;
@@ -421,8 +442,13 @@ AUDIO_CORE_RAM audio_block_t* AudioPlayMemory::updateLoopForwardReverse()
                     // koniec przetwarzania pitchCountera
                     if (iPitchCounter <= loopStartPoint)
                     {
-                        iPitchCounter =
-                          constrainsInSamples.loopPoint2 - (loopStartPoint - iPitchCounter);
+                        const int32_t loopLength = loopEndPoint - loopStartPoint;
+                        if (loopLength > 0)
+                        {
+                            int32_t overshoot = (loopStartPoint - iPitchCounter - 1) % loopLength;
+                            if (overshoot < 0) overshoot += loopLength;
+                            iPitchCounter = loopEndPoint - 1 - overshoot;
+                        }
                     }
                     //***************************************************************************************
                     // warunki pętli

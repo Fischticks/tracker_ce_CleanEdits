@@ -41,7 +41,7 @@ const char firmwareVersionLabelFormat[] = "%d.%d.%d " FW_EDITION_NAME;
 const char firmwareVersionLabelFormatBeta[] = "%d.%d.%d " FW_EDITION_NAME " beta %d";
 
 const uint8_t PROJECT_FILE_VERSION = 17;   // wersja struktury pliku projektu
-const uint8_t INSTRUMENT_FILE_VERSION = 10; // wersja struktury pliku instrumentu
+const uint8_t INSTRUMENT_FILE_VERSION = 11; // Sample FX + Instrument Modulation extension
 #ifdef MOD_PATTERN_BPM
 // 8: strPattern::rezerwa2/3 = Pattern BPM (0 = OFF). Version 7 is intentionally skipped: it is reserved for
 // the Master Multiplier extension (rezerwa1), which this firmware does not carry.
@@ -684,10 +684,13 @@ struct strInstrument
     uint8_t bitDepth; // = BIT_DEPTH_MAX;
     int8_t tuneResample;
 
-    // Static sample-instrument effects; appended for backward-compatible .pti migration.
+    // Fixed eight-byte extension: Sample FX fields retain their original offsets.
     uint8_t sampleRateReduction;
     int8_t toneFilter;
-    uint8_t sampleEffectsReserved[2];
+    int8_t pitchModSemitones; // -24..+24 semitones
+    int8_t pitchModCents;     // -100..+100 cents; default +100 preserves legacy +/-1 semitone
+    uint8_t lfoPolarityMask;  // bit n: LFO in envelope slot n is unipolar
+    uint8_t sampleModReserved[3];
 
     // Bitmasks for envelope[envWtPos / envGranLen].enable so legacy .pti files (which only ever
     // set bit 0 = 0x01 for Wavetable Position) never unintendedly enable Granular Length automation.
@@ -744,7 +747,7 @@ struct strInstrument
         }
     }
 };
-static_assert(sizeof(strInstrument) == 376, "strInstrument size must remain 376 bytes");
+static_assert(sizeof(strInstrument) == 380, "strInstrument size must remain 380 bytes");
 
 //----------------------------------------------------------------------------------
 const strInstrument defaultInstrumentParams = {
@@ -790,7 +793,10 @@ const strInstrument defaultInstrumentParams = {
     .tuneResample = 0,
     .sampleRateReduction = 0,
     .toneFilter = 0,
-    .sampleEffectsReserved = { 0, 0 },
+    .pitchModSemitones = 0,
+    .pitchModCents = 100,
+    .lfoPolarityMask = 0,
+    .sampleModReserved = { 0, 0, 0 },
 };
 
 //----------------------------------------------------------------------------------

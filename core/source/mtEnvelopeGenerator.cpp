@@ -437,8 +437,22 @@ void envelopeGenerator::calc()
                 tempOutput = amount; // przy attack - 0 powstawał nan i loop dzialal nieprawidlowo -
                                      // andrzej2000
 
-            envTemp.tempOutput =
-              isRandom ? randomValue : clamp<float>(tempOutput, envTemp.killOutput, MAX_OUTPUT);
+            if (isRandom)
+            {
+                envTemp.tempOutput = randomValue;
+            }
+            else if (amount < 0.0f)
+            {
+                // A negative Amount must be able to ramp below zero. Clamp only to
+                // the actual attack endpoints; keep the legacy positive path intact.
+                const float attackMin = (envTemp.killOutput < amount) ? envTemp.killOutput : amount;
+                const float attackMax = (envTemp.killOutput > amount) ? envTemp.killOutput : amount;
+                envTemp.tempOutput = clamp<float>(tempOutput, attackMin, attackMax);
+            }
+            else
+            {
+                envTemp.tempOutput = clamp<float>(tempOutput, envTemp.killOutput, MAX_OUTPUT);
+            }
             envTemp.maxOutput = envTemp.tempOutput;
             break;
 
@@ -535,13 +549,21 @@ float envelopeGenerator::fMap(float x, float in_min, float in_max, float out_min
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+float envelopeGenerator::shapeLfoOutput(float canonical) const
+{
+    if (!envelope || (envelope->loop != 1 && envelope->loop != 3))
+        return canonical;
+    const float shaped = lfoUnipolar ? (canonical + 1.0f) * 0.5f : canonical;
+    return shaped * lfoDepth;
+}
+
 float envelopeGenerator::getOut()
 {
     if (!envelope || !envelope->enable)
         return 0.0;
 
     calc();
-    return (envTemp.output);
+    return shapeLfoOutput(envTemp.output);
 }
 
 float envelopeGenerator::getLastOut()
@@ -550,7 +572,7 @@ float envelopeGenerator::getLastOut()
     if (!envelope || !envelope->enable)
         return 0.0;
 
-    return (envTemp.output);
+    return shapeLfoOutput(envTemp.output);
 }
 
 void envelopeGenerator::syncTrackerSeq(uint32_t val, float seqSpeed)

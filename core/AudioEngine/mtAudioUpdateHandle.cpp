@@ -180,6 +180,12 @@ inline void playerEngine::handleUpdateEnvelope(uint8_t type, bool enableConditio
                 }
                 if (isActiveEnvelope)
                 {
+                    // Live polarity/depth edits update only output shaping; phase and random S&H
+                    // timing remain owned by the envelope generator and are not restarted.
+                    const strInstrument& lfoInstr = mtProject.instrument[currentInstrument_idx];
+                    envelopePtr[type]->setLfoShaping(
+                      lfoInstr.lfo[type].amount,
+                      ((lfoInstr.lfoPolarityMask >> type) & 1u) != 0);
                     currentEnvelopeModification[type] = envelopePtr[type]->getOut();
                     if (type == envGranLen &&
                         mtProject.instrument[currentInstrument_idx].playMode == playModeGranular)
@@ -222,6 +228,8 @@ inline void playerEngine::handleUpdateEndReleaseAction()
             {
                 currentEnvelopeModification[i] = 0;
                 envelopePtr[i]->stop();
+                if (i == envFinetune)
+                    refreshRegister |= FINETUNE_MASK;
             }
         }
     }
@@ -254,8 +262,13 @@ inline void playerEngine::handleUpdateRefreshFinetune()
             currentEnvelopeModification[envFinetune] = 0;
         }
 
-        int32_t localFinetuneMod =
-          currentEnvelopeModification[envFinetune] * MAX_INSTRUMENT_FINETUNE;
+        const strInstrument& pitchInstrument = mtProject.instrument[currentInstrument_idx];
+        const float pitchDepthCents =
+          (float)pitchInstrument.pitchModSemitones * 100.0f + (float)pitchInstrument.pitchModCents;
+        modPitchModulation(currentEnvelopeModification[envFinetune] * pitchDepthCents);
+
+        // Extended pitch modulation is independent of ordinary fine-tune.
+        int32_t localFinetuneMod = 0;
 
         int16_t localFinetune = 0;
 

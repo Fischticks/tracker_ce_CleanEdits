@@ -585,6 +585,19 @@ static void functSelectParams(uint8_t button, uint8_t state)
         {
             return;
         }
+
+        // Pressing the selected Amount button again cycles its sub-parameters.
+        if (state == buttonPress)
+        {
+            const bool isStdLfo = (IE->editorInstrument->envelope[envSlot].loop == 1);
+            const bool isAmountButton = isStdLfo ? (button >= 5) : (button == 7);
+            const uint8_t amountPlace = isStdLfo ? 4 : 6;
+            if (isAmountButton && IE->selectedPlace[IE->mode] == amountPlace)
+            {
+                IE->advanceAmountSub();
+                return;
+            }
+        }
     }
     else if (IE->mode == mtInstEditModeParams)
     {
@@ -1120,6 +1133,11 @@ void cInstrumentEditor::changeSelectedEnvRelease(int16_t value)
 
 void cInstrumentEditor::changeSelectedEnvAmount(int16_t value)
 {
+    if (IE->getAmountSub() != cInstrumentEditor::kSubAmount)
+    {
+        IE->changeAmountSub(value);
+        return;
+    }
     IE->changeEnvAmount(IE->selectedEnvelope, value);
 }
 
@@ -1134,6 +1152,11 @@ void cInstrumentEditor::changeSelectedLfoSpeed(int16_t value)
 
 void cInstrumentEditor::changeSelectedLfoAmount(int16_t value)
 {
+    if (IE->getAmountSub() != cInstrumentEditor::kSubAmount)
+    {
+        IE->changeAmountSub(value);
+        return;
+    }
     IE->changeLfoAmount(IE->selectedEnvelope, value);
 }
 
@@ -1241,6 +1264,11 @@ void cInstrumentEditor::changeEnvState(int idx, int16_t value)
     for (int i = 0; i < 8; i++)
     {
         instrumentPlayer[i].setRefreshBit(statusByte);
+    }
+    if (envIdx == envFinetune)
+    {
+        for (int i = 0; i < 8; i++)
+            instrumentPlayer[i].setRefreshBit(FINETUNE_MASK);
     }
 
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
@@ -1448,12 +1476,11 @@ void cInstrumentEditor::changeEnvAmount(int idx, int16_t value)
 
     float fVal = value * 0.01;
 
-    if (IE->editorInstrument->envelope[envIdx].amount + fVal < 0)
-        IE->editorInstrument->envelope[envIdx].amount = 0;
-    else if (IE->editorInstrument->envelope[envIdx].amount + fVal > AMOUNT_MAX)
-        IE->editorInstrument->envelope[envIdx].amount = AMOUNT_MAX;
-    else
-        IE->editorInstrument->envelope[envIdx].amount += fVal;
+    const float minimumAmount = (envIdx == envAmp) ? 0.0f : -AMOUNT_MAX;
+    IE->editorInstrument->envelope[envIdx].amount =
+      clamp<float>(IE->editorInstrument->envelope[envIdx].amount + fVal,
+                   minimumAmount,
+                   AMOUNT_MAX);
 
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
 
@@ -1560,29 +1587,32 @@ void cInstrumentEditor::changeLfoAmount(int idx, int16_t value)
     const int envIdx = automationDestToEnvSlot(idx);
     float fVal = value * 0.01;
 
-    if (IE->editorInstrument->lfo[envIdx].amount + fVal < 0)
-        IE->editorInstrument->lfo[envIdx].amount = 0;
-    else if (IE->editorInstrument->lfo[envIdx].amount + fVal > AMOUNT_MAX)
-        IE->editorInstrument->lfo[envIdx].amount = AMOUNT_MAX;
-    else
-        IE->editorInstrument->lfo[envIdx].amount += fVal;
-
-    if (IE->editorInstrument->envelope[envIdx].loop == 3)
+    if (envIdx != envAmp)
     {
+        float next = roundf((IE->editorInstrument->lfo[envIdx].amount + fVal) * 100.0f) / 100.0f;
+        IE->editorInstrument->lfo[envIdx].amount = clamp<float>(next, -AMOUNT_MAX, AMOUNT_MAX);
+    }
+    else
+    {
+        if (IE->editorInstrument->lfo[envIdx].amount + fVal < 0)
+            IE->editorInstrument->lfo[envIdx].amount = 0;
+        else if (IE->editorInstrument->lfo[envIdx].amount + fVal > AMOUNT_MAX)
+            IE->editorInstrument->lfo[envIdx].amount = AMOUNT_MAX;
+        else
+            IE->editorInstrument->lfo[envIdx].amount += fVal;
+    }
+
+    if (IE->editorInstrument->envelope[envIdx].loop == 3 && envIdx == envAmp)
+    {
+        // The stock amplitude wavetable LFO uses envelope.amount as gain.
+        // Non-amplitude wavetable LFO depth is applied once by setLfoShaping().
         IE->editorInstrument->envelope[envIdx].amount = IE->editorInstrument->lfo[envIdx].amount;
     }
 
-    uint32_t statusByte = 0;
-    switch (envIdx)
-    {
-        case envAmp: statusByte = LFO_AMP_SEND_MASK; break;
-        case envCutoff: statusByte = LFO_FILTER_SEND_MASK; break;
-        case envWtPos: statusByte = LFO_WT_POS_SEND_MASK; break;
-        case envGranPos: statusByte = LFO_GRAN_POS_SEND_MASK; break;
-        case envPan: statusByte = LFO_PANNING_SEND_MASK; break;
-        case envFinetune: statusByte = LFO_FINETUNE_SEND_MASK; break;
-        default: break;
-    }
+    // Non-amplitude LFO depth is applied by the active generator in-place. Do not
+    // reinitialize its sync origin or random sample timing for a depth-only edit.
+    uint32_t statusByte = (envIdx == envAmp) ? LFO_AMP_SEND_MASK
+                                             : ((envIdx == envFinetune) ? FINETUNE_MASK : 0);
     for (int i = 0; i < 8; i++)
     {
         instrumentPlayer[i].setRefreshBit(statusByte);
@@ -1617,6 +1647,11 @@ static void triggerEnvelopeRefresh(int idx)
     for (int i = 0; i < 8; i++)
     {
         instrumentPlayer[i].setRefreshBit(statusByte);
+    }
+    if (envIdx == envFinetune)
+    {
+        for (int i = 0; i < 8; i++)
+            instrumentPlayer[i].setRefreshBit(FINETUNE_MASK);
     }
 }
 
@@ -2636,10 +2671,18 @@ int16_t cInstrumentEditor::getControlChangeDelta(SampleInstrumentParamsCC param,
         case kFinetuneAmount:
         {
             const int envIdx = automationDestToEnvSlot(automationIdx);
-            float amount = IE->editorInstrument->envelope[envIdx].loop
-                             ? IE->editorInstrument->lfo[envIdx].amount
-                             : IE->editorInstrument->envelope[envIdx].amount;
+            const uint8_t loop = IE->editorInstrument->envelope[envIdx].loop;
+            const bool isLfo = (loop == 1 || loop == 3);
+            float amount = isLfo ? IE->editorInstrument->lfo[envIdx].amount
+                                 : IE->editorInstrument->envelope[envIdx].amount;
             float destValue = map((float)cc_value, 0.0f, 127.0f, 0.0f, AMOUNT_MAX);
+            if (envIdx != envAmp)
+            {
+                // All non-Volume envelope/LFO amounts are bipolar:
+                // CC 0 = -100%, CC 64 = exactly 0%, CC 127 = +100%.
+                destValue = (cc_value <= 64) ? ((float)cc_value - 64.0f) / 64.0f
+                                             : ((float)cc_value - 64.0f) / 63.0f;
+            }
 
             return (int16_t)(100.0f * (destValue - amount));
         }
@@ -2720,15 +2763,15 @@ void cInstrumentEditor::changeControlChangeParam(SampleInstrumentParamsCC param,
         case kWavetablePositionAmount:
         case kGranularPositionAmount:
         case kFinetuneAmount:
-            if (IE->editorInstrument->envelope[automationDestToEnvSlot(automationIdx)].loop)
-            {
+        {
+            const uint8_t envIdx = automationDestToEnvSlot(automationIdx);
+            const uint8_t loop = IE->editorInstrument->envelope[envIdx].loop;
+            if (loop == 1 || loop == 3)
                 changeLfoAmount(automationIdx, delta);
-            }
             else
-            {
                 changeEnvAmount(automationIdx, delta);
-            }
             break;
+        }
         default: break;
     }
 }
@@ -3493,17 +3536,9 @@ void cInstrumentEditor::setDefaultLfoAmount()
     IE->editorInstrument->lfo[envSlot].amount =
       defaultInstrumentParams.lfo[envSlot].amount;
 
-    uint32_t statusByte = 0;
-    switch (envSlot)
-    {
-        case envAmp: statusByte = LFO_AMP_SEND_MASK; break;
-        case envCutoff: statusByte = LFO_FILTER_SEND_MASK; break;
-        case envWtPos: statusByte = LFO_WT_POS_SEND_MASK; break;
-        case envGranPos: statusByte = LFO_GRAN_POS_SEND_MASK; break;
-        case envPan: statusByte = LFO_PANNING_SEND_MASK; break;
-        case envFinetune: statusByte = LFO_FINETUNE_SEND_MASK; break;
-        default: break;
-    }
+    // Resetting non-amplitude depth must not rebase LFO synchronization.
+    uint32_t statusByte = (envSlot == envAmp) ? LFO_AMP_SEND_MASK
+                                              : ((envSlot == envFinetune) ? FINETUNE_MASK : 0);
     for (int i = 0; i < 8; i++)
     {
         instrumentPlayer[i].setRefreshBit(statusByte);
@@ -3682,4 +3717,105 @@ void cInstrumentEditor::cancelMultiFrame()
 void cInstrumentEditor::setPlayButtonAction()
 {
     ip->setButtonObj(interfaceButtonPlay, buttonPress, functPlayAction);
+}
+
+
+uint8_t cInstrumentEditor::amountColumn() const
+{
+    const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
+    return (editorInstrument->envelope[envSlot].loop == 1) ? 5 : 7;
+}
+
+uint8_t cInstrumentEditor::getAmountSub()
+{
+    const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
+    if (mode != mtInstEditModeEnv || amountSub == kSubAmount ||
+        amountSubPlace != selectedPlace[mode] || amountSubEnv != selectedEnvelope ||
+        amountSubLoop != editorInstrument->envelope[envSlot].loop)
+        amountSub = kSubAmount;
+    return amountSub;
+}
+
+void cInstrumentEditor::advanceAmountSub()
+{
+    const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
+    const uint8_t loop = editorInstrument->envelope[envSlot].loop;
+    const bool isLfo = (loop == 1 || loop == 3);
+    uint8_t sequence[4];
+    uint8_t count = 0;
+    sequence[count++] = kSubAmount;
+    if (isLfo && envSlot != envAmp)
+        sequence[count++] = kSubPolarity;
+    if (envSlot == envFinetune)
+    {
+        sequence[count++] = kSubPitchSemitones;
+        sequence[count++] = kSubPitchCents;
+    }
+    const uint8_t current = getAmountSub();
+    uint8_t index = 0;
+    for (uint8_t i = 0; i < count; ++i)
+        if (sequence[i] == current) index = i;
+    amountSub = sequence[(index + 1) % count];
+    amountSubPlace = selectedPlace[mode];
+    amountSubEnv = selectedEnvelope;
+    amountSubLoop = loop;
+    if (loop == 1 || loop == 3) showLfoAmount();
+    else showEnvAmount();
+}
+
+void cInstrumentEditor::changeAmountSub(int16_t value)
+{
+    const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
+    const uint8_t sub = getAmountSub();
+    uint32_t sendBit = 0;
+    bool changed = false;
+    switch (sub)
+    {
+        case kSubPolarity:
+            if (value != 0)
+            {
+                editorInstrument->lfoPolarityMask ^= (uint8_t)(1u << envSlot);
+                changed = true;
+                // The active generator picks up polarity in-place. Do not reinitialize its
+                // waveform or synchronization origin.
+                if (envSlot == envFinetune)
+                    sendBit = FINETUNE_MASK;
+            }
+            break;
+        case kSubPitchSemitones:
+        {
+            const int next = clamp<int>(editorInstrument->pitchModSemitones + value, -24, 24);
+            if (next != editorInstrument->pitchModSemitones)
+            {
+                editorInstrument->pitchModSemitones = (int8_t)next;
+                sendBit = FINETUNE_MASK;
+                changed = true;
+            }
+            break;
+        }
+        case kSubPitchCents:
+        {
+            const int next = clamp<int>(editorInstrument->pitchModCents + value, -100, 100);
+            if (next != editorInstrument->pitchModCents)
+            {
+                editorInstrument->pitchModCents = (int8_t)next;
+                sendBit = FINETUNE_MASK;
+                changed = true;
+            }
+            break;
+        }
+        default: break;
+    }
+
+    if (sendBit)
+    {
+        for (int i = 0; i < 8; ++i)
+            instrumentPlayer[i].setRefreshBit(sendBit);
+    }
+    if (changed)
+        newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+
+    const uint8_t loop = editorInstrument->envelope[envSlot].loop;
+    if (loop == 1 || loop == 3) showLfoAmount();
+    else showEnvAmount();
 }

@@ -34,6 +34,10 @@
 
 class Timer;
 
+// Glide clamps expand only while pitch modulation is active.
+#define PM_PITCH_HI(tbl) ((tbl)[MAX_NOTE - 1] * pitchBoundHiScale)
+#define PM_PITCH_LO(tbl) ((tbl)[MIN_NOTE] * pitchBoundLoScale)
+
 class AudioPlayMemory : public AudioStream
 {
   public:
@@ -110,6 +114,7 @@ class AudioPlayMemory : public AudioStream
     void setGlide(uint16_t value, int8_t currentNote, uint8_t instr_idx);
     void setFineTune(int8_t value, int8_t currentNote);
     void setTune(int8_t value, int8_t currentNote);
+    void setPitchModulationCents(float cents);
     //*********
     //*****Granular
     void setGranularGrainLength();
@@ -443,6 +448,13 @@ class AudioPlayMemory : public AudioStream
                                  // kolejną(lub poprzednią)
     int8_t currentTune;
     int8_t currentFineTune;
+    static constexpr float kPitchModMaxCents = 2500.0f;
+    static constexpr float kPitchEffHiScale = 4.25f;
+    static constexpr float kPitchEffLoScale = 0.23529412f;
+    float pitchModulationRatio = 1.0f;
+    bool pitchModActive = false;
+    float pitchBoundHiScale = 1.0f;
+    float pitchBoundLoScale = 1.0f;
     //********
     //********** Wavetable
     uint16_t wavetableWindowSize;
