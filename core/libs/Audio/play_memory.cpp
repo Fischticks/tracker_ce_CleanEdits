@@ -202,10 +202,11 @@ void AudioPlayMemory::setPitchModulationCents(float cents)
     if (cents > kPitchModMaxCents) cents = kPitchModMaxCents;
     else if (cents < -kPitchModMaxCents) cents = -kPitchModMaxCents;
     const float ratio = (cents == 0.0f) ? 1.0f : exp2f(cents * (1.0f / 1200.0f));
-    AudioNoInterrupts();
+    // This setter is reached through playerEngine::update() inside the audio callback.
+    // Playback reads the same state later in that callback, so no interrupt toggle is needed.
+    // In particular, do not re-enable the audio IRQ from inside its own callback.
     pitchModulationRatio = ratio;
     pitchModActive = (cents != 0.0f);
-    AudioInterrupts();
 }
 
 AUDIO_CORE_RAM void AudioPlayMemory::lowerVolume3dB(audio_block_t* block)
