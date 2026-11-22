@@ -718,8 +718,6 @@ void cInstrumentEditor::showEffectScreen()
     display.setControlText2(label[6], "MIDI Mapping");
     display.setControlText(label[7], "Back");
     display.setControlText2(label[7], "");
-    display.setControlText(label[7], "Back");
-    display.setControlText2(label[7], "");
 
     labelDataMore.dotIndicator.count = 2;
     labelDataMore.dotIndicator.current = 1;
@@ -734,8 +732,6 @@ void cInstrumentEditor::showEffectScreen()
 
     display.setRemoveControlStyle(label[1], controlStyleShowBitmap);
     display.setRemoveControlStyle(label[6], controlStyleShowBitmap);
-    display.setRemoveControlStyle(label[6], controlStyleSpecialFx2);
-
     display.setControlPosition(label[1], (800 / 8) * 1 + (800 / 16), -1);
     display.setControlPosition(label[6], (800 / 8) * 6 + (800 / 16), -1);
 
