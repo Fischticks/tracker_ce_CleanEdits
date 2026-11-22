@@ -7,6 +7,9 @@
 #include "mtMidi.h"
 #include "mtStructs.h"
 #include "scales.h"
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+#include "quantizeGrid.h"
+#endif
 #include "util_math.h"
 #include <stdint.h>
 
@@ -1052,14 +1055,16 @@ class Sequencer
     bool stepQuantizeTarget(uint8_t track, uint8_t cursorStep, uint8_t& destStep, int8_t& micromove);
     bool takeStepQuantizeAdvance(uint8_t& cursorStep);
     void cancelStepQuantizeAdvance();
+    void invalidateStepQuantizePosition(); // the cursor was moved by something other than a quantized note
 
   private:
     struct strStepQuantize
     {
-        bool valid = false;   // pos is the exact grid position the cursor stands on
+        quantizeGrid::RememberedPosition remembered; // exact grid position the cursor stands on
         bool pending = false; // a note was placed; nextPos is where the cursor goes next
-        int32_t pos = 0;
         int32_t nextPos = 0;
+        int32_t interval = 0; // grid nextPos belongs to
+        int32_t total = 0;
     } stepQuant;
 #endif
 

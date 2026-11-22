@@ -61,6 +61,31 @@ int main()
             }
         }
     }
+    // Remembered position (RememberedPosition): stale positions are never reused.
+    {
+        const int32_t total = 28 * kTicksPerStep;
+        const int32_t i16d = intervalTicks(div1_16D, 4); // a different grid
+        const int32_t i8t = intervalTicks(div1_8T, 4);
+        RememberedPosition r;
+        const int32_t p = next(0, i8t, total); // a fractional position
+        r.set(p, i8t, total);
+        CHECK(r.usableAt(stepOf(p), i8t, total));
+        // Division change (different interval) -> not reusable even on the same step
+        CHECK(!r.usableAt(stepOf(p), i16d, total));
+        // Quarter Note Length change -> not reusable
+        CHECK(!r.usableAt(stepOf(p), intervalTicks(div1_8T, 5), total));
+        // Pattern length change -> not reusable
+        CHECK(!r.usableAt(stepOf(p), i8t, 20 * kTicksPerStep));
+        // Manual cursor move invalidates; returning to the same step stays invalid
+        r.invalidate();
+        CHECK(!r.usableAt(stepOf(p) + 1, i8t, total));
+        CHECK(!r.usableAt(stepOf(p), i8t, total));
+        // A valid position is not reusable on another step
+        r.set(p, i8t, total);
+        CHECK(!r.usableAt(stepOf(p) + 1, i8t, total));
+        CHECK(!r.usableAt(stepOf(p) - 1, i8t, total));
+    }
+
     printf("%ld checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;
 }

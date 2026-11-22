@@ -124,6 +124,30 @@ inline int32_t positionFromPlayer(int32_t step, int32_t uStep)
     return step * kTicksPerStep + (uStep - 1);
 }
 
+// Exact grid position remembered between two Step Quantize note entries. It is only reusable while it still belongs to
+// the current grid (same interval and pattern length) and the cursor has not been moved since it was stored.
+struct RememberedPosition
+{
+    bool valid = false;
+    int32_t pos = 0;
+    int32_t interval = 0;
+    int32_t total = 0;
+
+    void set(int32_t p, int32_t gridInterval, int32_t gridTotal)
+    {
+        valid = true;
+        pos = p;
+        interval = gridInterval;
+        total = gridTotal;
+    }
+    void invalidate() { valid = false; }
+    bool usableAt(int32_t cursorStep, int32_t gridInterval, int32_t gridTotal) const
+    {
+        return valid && interval == gridInterval && total == gridTotal && pos >= 0 && pos < gridTotal &&
+               stepOf(pos) == cursorStep;
+    }
+};
+
 } // namespace quantizeGrid
 
 #endif /* QUANTIZE_GRID_H_ */

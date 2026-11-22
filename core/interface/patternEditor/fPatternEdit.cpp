@@ -997,6 +997,9 @@ void cPatternEditor::moveCursorByStep()
 
 void cPatternEditor::moveCursorByStep(uint8_t val)
 {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    sequencer.invalidateStepQuantizePosition();
+#endif
     if (mtProject.values.patternEditStep + val <= 0)
         return;
 
@@ -1040,6 +1043,7 @@ void cPatternEditor::moveCursorByStepParallel()
         PTE->isSelectingNow = 0;
         return;
     }
+    sequencer.invalidateStepQuantizePosition();
 #endif
     if (mtProject.values.patternEditStep <= 0)
         return;
@@ -2098,6 +2102,9 @@ void functEncoder(int16_t value)
         value = clamp<int>(value, -10, 10);
 
         // przesuwanie gora-dol
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+        sequencer.invalidateStepQuantizePosition();
+#endif
         if (PTE->trackerPattern.actualStep + value < 0)
             PTE->trackerPattern.actualStep = 0;
         else if (PTE->trackerPattern.actualStep + value > PTE->trackerPattern.patternLength - 1)
@@ -2553,6 +2560,10 @@ void cPatternEditor::previousStep()
         PTE->isSelectingNow = 1;
     }
 
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    sequencer.invalidateStepQuantizePosition();
+#endif
+
     if (PTE->trackerPattern.actualStep > 0)
         PTE->trackerPattern.actualStep--; // zmiana pozycji kursora
     else if (!shiftPressed)
@@ -2598,6 +2609,10 @@ void cPatternEditor::nextStep()
         // PTE->trackerPattern.selectState = 1;
         PTE->isSelectingNow = 1;
     }
+
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    sequencer.invalidateStepQuantizePosition();
+#endif
 
     if (PTE->trackerPattern.actualStep < PTE->trackerPattern.patternLength - 1)
         PTE->trackerPattern.actualStep++;
@@ -3070,10 +3085,16 @@ static void functInsertHome(uint8_t state)
                 PTE->trackerPattern.selectStartTrack = PTE->trackerPattern.actualTrack;
                 PTE->trackerPattern.selectEndTrack = PTE->trackerPattern.actualTrack;
 
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+                sequencer.invalidateStepQuantizePosition();
+#endif
                 PTE->trackerPattern.actualStep = 0; // zmiana pozycji kursora
             }
             else
             {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+                sequencer.invalidateStepQuantizePosition();
+#endif
                 PTE->trackerPattern.actualStep = 0; // zmiana pozycji kursora
             }
         }
@@ -3190,6 +3211,9 @@ static void functDeleteBackspace(uint8_t state)
                         {
                             if (PTE->trackerPattern.selectStartStep > 0)
                             {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+                                sequencer.invalidateStepQuantizePosition();
+#endif
                                 PTE->trackerPattern.selectStartStep--;
                                 PTE->trackerPattern.selectEndStep--;
                                 PTE->trackerPattern.actualStep--; // zmiana pozycji kursora
@@ -3198,7 +3222,12 @@ static void functDeleteBackspace(uint8_t state)
                         else
                         {
                             if (PTE->trackerPattern.actualStep > 0)
+                            {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+                                sequencer.invalidateStepQuantizePosition();
+#endif
                                 PTE->trackerPattern.actualStep--; // zmiana pozycji kursora
+                            }
                         }
                     }
                 }

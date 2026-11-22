@@ -2715,9 +2715,9 @@ bool Sequencer::stepQuantizeTarget(uint8_t track, uint8_t cursorStep, uint8_t& d
     const int32_t interval = quantizeSettings::effectiveInterval();
 
     int32_t p;
-    if (stepQuant.valid && stepQuant.pos < total && quantizeGrid::stepOf(stepQuant.pos) == cursorStep)
+    if (stepQuant.remembered.usableAt(cursorStep, interval, total))
     {
-        p = stepQuant.pos;
+        p = stepQuant.remembered.pos;
     }
     else
     {
@@ -2726,8 +2726,9 @@ bool Sequencer::stepQuantizeTarget(uint8_t track, uint8_t cursorStep, uint8_t& d
 
     destStep = (uint8_t)quantizeGrid::stepOf(p);
     micromove = quantizeGrid::micromoveForOffset(quantizeGrid::offsetOf(p));
-    stepQuant.pos = p;
     stepQuant.nextPos = quantizeGrid::next(p, interval, total);
+    stepQuant.interval = interval;
+    stepQuant.total = total;
     stepQuant.pending = true;
     return true;
 }
@@ -2739,14 +2740,19 @@ bool Sequencer::takeStepQuantizeAdvance(uint8_t& cursorStep)
         return false;
     }
     stepQuant.pending = false;
-    stepQuant.pos = stepQuant.nextPos;
-    stepQuant.valid = true;
-    cursorStep = (uint8_t)quantizeGrid::stepOf(stepQuant.pos);
+    stepQuant.remembered.set(stepQuant.nextPos, stepQuant.interval, stepQuant.total);
+    cursorStep = (uint8_t)quantizeGrid::stepOf(stepQuant.nextPos);
     return true;
 }
 
 void Sequencer::cancelStepQuantizeAdvance()
 {
+    stepQuant.pending = false;
+}
+
+void Sequencer::invalidateStepQuantizePosition()
+{
+    stepQuant.remembered.invalidate();
     stepQuant.pending = false;
 }
 #endif
