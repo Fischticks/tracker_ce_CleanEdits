@@ -7,6 +7,9 @@
 #include "mtMidi.h"
 #include "mtStructs.h"
 #include "scales.h"
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+#include "quantizeGrid.h"
+#endif
 #include "util_math.h"
 #include <stdint.h>
 
@@ -457,6 +460,9 @@ class Sequencer
             bool noteOpen = 0;
             uint8_t recOpen = 0;
             uint8_t recNoteOnStepIdx = 0;
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+            uint8_t recQuantFwdSteps = 0; // steps the open note was moved forward by Quantize (Note Off guard)
+#endif
 
             int16_t noteSource = -1;
 
@@ -1039,6 +1045,28 @@ class Sequencer
     uint8_t recMicrotiming();
     uint8_t recVelocity();
     uint8_t getDestRecordingStep(uint8_t track, bool quantize, bool noteOff = false);
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    // Shift + Pattern -> Quantize: destination step and micromove (-1 = none) for a note played on `track` now.
+    void quantizeNoteOn(uint8_t track, uint8_t& destStep, int8_t& micromove, uint8_t& fwdSteps);
+
+  public:
+    // Step Quantize (manual note entry). stepQuantizeTarget() is repeatable for one cursor position (chords call it
+    // once per track); the cursor moves to the next grid position when the editor calls takeStepQuantizeAdvance().
+    bool stepQuantizeTarget(uint8_t track, uint8_t cursorStep, uint8_t& destStep, int8_t& micromove);
+    bool takeStepQuantizeAdvance(uint8_t& cursorStep);
+    void cancelStepQuantizeAdvance();
+    void invalidateStepQuantizePosition(); // the cursor was moved by something other than a quantized note
+
+  private:
+    struct strStepQuantize
+    {
+        quantizeGrid::RememberedPosition remembered; // exact grid position the cursor stands on
+        bool pending = false; // a note was placed; nextPos is where the cursor goes next
+        int32_t nextPos = 0;
+        int32_t interval = 0; // grid nextPos belongs to
+        int32_t total = 0;
+    } stepQuant;
+#endif
 
     uint8_t getNextArpNote(strPlayer::strPlayerTrack* playerRow);
 

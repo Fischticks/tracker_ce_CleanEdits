@@ -49,8 +49,9 @@ make clean && make plus CUSTOM_DEFINES=""                          # no optional
 | Shift + Pattern screen: Pattern Settings (Length, Divider, BPM) | `MOD_PATTERN_SETTINGS` | Enabled | optional: `MOD_PATTERN_BPM` (adds the BPM slider) | [pattern-settings.md](pattern-settings.md) |
 | Sample Playback Boundary Capture | `MOD_SAMPLE_BOUNDARY_CAPTURE` | Enabled | – | [sample-boundary-capture.md](sample-boundary-capture.md) |
 | Lazy Chop | `MOD_LAZY_CHOP` | Enabled | – | [lazy-chop.md](lazy-chop.md) |
+| Shift + Pattern screen: Quantize (live-record quantize, Step Quantize, Note Off, Bypass) | `MOD_SHIFT_PATTERN_QUANTIZE` | Enabled (approved by the user) | `MOD_PATTERN_SETTINGS`; optional `MOD_PATTERN_BPM` | [shift-pattern-quantize.md](shift-pattern-quantize.md) |
 
-All four features are enabled in the default build for Original Tracker, Tracker+ and Tracker Mini. The exact default list is defined only in `custom-firmware.mk`.
+All five features are enabled in the default build for Original Tracker, Tracker+ and Tracker Mini. The exact default list is defined only in `custom-firmware.mk`.
 
 **File-format warning:** with `MOD_PATTERN_BPM` the firmware saves pattern file version 8. Older stock firmware may not load projects
 saved that way; keep a backup of `Projects/` before using such a build on existing projects.
@@ -62,6 +63,8 @@ saved that way; keep a backup of `Projects/` before using such a build on existi
   enabled, `samplePlayback/previewSession.*` is compiled in as shared support.
 - Pattern Settings works on its own (Length and Divider sliders). With `MOD_PATTERN_BPM` it also shows the BPM slider that edits
   the Pattern BPM. The engine does not depend on the screen.
+- Quantize (`MOD_SHIFT_PATTERN_QUANTIZE`) adds the Quantize category to the Pattern Settings screen and therefore requires
+  `MOD_PATTERN_SETTINGS`. It is independent of `MOD_PATTERN_BPM` and of Sample Playback Markers.
 
 ## Pattern file versions
 
@@ -77,11 +80,14 @@ The table is updated whenever another feature edits one of these files.
 
 | File | Features |
 |---|---|
-| `core/source/mtSequencer.cpp` | Pattern BPM |
-| `core/source/mtSequencer.h` | Pattern BPM |
+| `core/source/mtSequencer.cpp` | Pattern BPM, Quantize |
+| `core/source/mtSequencer.h` | Pattern BPM, Quantize |
+| `core/source/mtSequencer_patternEdit.cpp` | Quantize (`setSelectionNote`) |
+| `core/FileManager/WorkspaceProjectLoad.cpp` | Quantize (settings reset) |
+| `core/interface/shiftPattern/*` | Pattern Settings, Quantize (category list and dispatch) |
 | `core/source/mtStructs.h` | Pattern BPM |
 | `core/FileManager/fileManagerPattern.cpp` | Pattern BPM |
-| `core/interface/patternEditor/fPatternEdit.cpp`, `patternEditor.h` | Pattern Settings |
+| `core/interface/patternEditor/fPatternEdit.cpp`, `patternEditor.h` | Pattern Settings, Quantize (`fPatternEdit.cpp` cursor advance) |
 | `core/interface/core/interface.cpp`, `interfaceDefs.h` | Pattern Settings |
 
 Sample Playback Markers (Boundary Capture and Lazy Chop have independent definitions; both compile `samplePlayback/previewSession.*` when either is on):

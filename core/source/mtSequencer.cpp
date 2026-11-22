@@ -10,6 +10,9 @@
 #include "mtSequencer.h"
 #include "mtStructs.h"
 #include "sampleRecorder/sampleRecorder.h"
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+#include "quantizeSettings.h"
+#endif
 
 #include "configEditor/configEditor.h"
 #include "core/songTimer.h"
@@ -2624,6 +2627,20 @@ AUDIO_CORE_RAM void Sequencer::loadNextPattern(uint8_t patternNumber)
     newFileManager.loadWorkspacePattern(patternNumber);
 }
 
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+// Shift + Pattern -> Quantize "Note Off": only the Note Off marker written to the pattern is optional; the note is
+// always released and the recording state always cleaned up.
+static inline bool noteOffMarkerEnabled()
+{
+    return quantizeSettings::values.noteOff;
+}
+#else
+static inline bool noteOffMarkerEnabled()
+{
+    return true;
+}
+#endif
+
 uint8_t Sequencer::getDestRecordingStep(uint8_t track, bool quantize, bool noteOff)
 {
     int destPos = player.track[track].actual_pos;
@@ -2637,9 +2654,108 @@ uint8_t Sequencer::getDestRecordingStep(uint8_t track, bool quantize, bool noteO
     {
         destPos = (destPos + 1) % (getActualPattern()->track[0].length + 1);
     }
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    else if (noteOff && player.track[track].recQuantFwdSteps > 0)
+    {
+        // The note-on was moved forward by Quantize. A Note Off placed on one of the steps it skipped (or on its own
+        // step) would sit before the note, so it goes to the step after the note instead.
+        const int len = getActualPattern()->track[0].length + 1;
+        const int on = player.track[track].recNoteOnStepIdx;
+        if (((on - destPos + len) % len) <= player.track[track].recQuantFwdSteps)
+        {
+            destPos = (on + 1) % len;
+        }
+    }
+#endif
 
     return destPos;
 }
+
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+// Position of the incoming note = 48 * step + (uStep - 1) ticks from the pattern start. Quantize moves it
+// Strength % of the way to the nearest grid position (ties forward); the result is written as a step plus a
+// micromove, even if the Microtiming Detection recording option is off.
+void Sequencer::quantizeNoteOn(uint8_t track, uint8_t& destStep, int8_t& micromove, uint8_t& fwdSteps)
+{
+    const int32_t len = getActualPattern()->track[0].length + 1;
+    const int32_t total = len * quantizeGrid::kTicksPerStep;
+    const int32_t step0 = player.track[track].actual_pos;
+    const int32_t u = player.track[track].uStep < 1 ? 1 : player.track[track].uStep;
+
+    int32_t p = quantizeGrid::positionFromPlayer(step0, u);
+    if (p < 0 || p >= total)
+    {
+        p = total - 1;
+    }
+
+    const quantizeGrid::Nearest n =
+      quantizeGrid::nearest(p, quantizeSettings::effectiveInterval(), total);
+    const int32_t r =
+      quantizeGrid::applyStrength(p, n.target, quantizeSettings::effectiveStrength(), total);
+
+    destStep = (uint8_t)quantizeGrid::stepOf(r);
+    micromove = quantizeGrid::micromoveForOffset(quantizeGrid::offsetOf(r));
+    fwdSteps = (n.target > p && quantizeSettings::effectiveStrength() > 0)
+                 ? (uint8_t)((destStep - step0 + len) % len)
+                 : 0;
+}
+
+// Step Quantize: where a note entered with the cursor on cursorStep goes. The first note snaps to the grid position
+// nearest to the cursor step (ties forward); after a note the cursor stands on the step that holds the next grid
+// position, whose exact position is remembered in stepQuant (the integer cursor alone cannot tell, e.g. 1/16
+// with Quarter Note Length 5). Full strength; Strength only applies to live recording.
+bool Sequencer::stepQuantizeTarget(uint8_t track, uint8_t cursorStep, uint8_t& destStep, int8_t& micromove)
+{
+    if (!quantizeSettings::effectiveStepQuantize() || !isEditMode())
+    {
+        return false;
+    }
+
+    const int32_t total = (getActualPattern()->track[track].length + 1) * quantizeGrid::kTicksPerStep;
+    const int32_t interval = quantizeSettings::effectiveInterval();
+
+    int32_t p;
+    if (stepQuant.remembered.usableAt(cursorStep, interval, total))
+    {
+        p = stepQuant.remembered.pos;
+    }
+    else
+    {
+        p = quantizeGrid::nearest(cursorStep * quantizeGrid::kTicksPerStep, interval, total).wrapped;
+    }
+
+    destStep = (uint8_t)quantizeGrid::stepOf(p);
+    micromove = quantizeGrid::micromoveForOffset(quantizeGrid::offsetOf(p));
+    stepQuant.nextPos = quantizeGrid::next(p, interval, total);
+    stepQuant.interval = interval;
+    stepQuant.total = total;
+    stepQuant.pending = true;
+    return true;
+}
+
+bool Sequencer::takeStepQuantizeAdvance(uint8_t& cursorStep)
+{
+    if (!stepQuant.pending)
+    {
+        return false;
+    }
+    stepQuant.pending = false;
+    stepQuant.remembered.set(stepQuant.nextPos, stepQuant.interval, stepQuant.total);
+    cursorStep = (uint8_t)quantizeGrid::stepOf(stepQuant.nextPos);
+    return true;
+}
+
+void Sequencer::cancelStepQuantizeAdvance()
+{
+    stepQuant.pending = false;
+}
+
+void Sequencer::invalidateStepQuantizePosition()
+{
+    stepQuant.remembered.invalidate();
+    stepQuant.pending = false;
+}
+#endif
 
 uint8_t Sequencer::recMicrotiming()
 {
@@ -2771,6 +2887,16 @@ AUDIO_CORE_FLASH void Sequencer::handleNoteOn(
         for (int tr = startTrack; tr < endTrack; tr++)
         {
             uint8_t destinationStep = isAnticipatedBeat1 ? 0 : getDestRecordingStep(tr, !recMicrotiming());
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+            bool quantApplied = false;
+            int8_t quantMicromove = -1;
+            uint8_t quantFwd = 0;
+            if (!isAnticipatedBeat1 && quantizeSettings::values.quantize)
+            {
+                quantizeNoteOn(tr, destinationStep, quantMicromove, quantFwd);
+                quantApplied = true;
+            }
+#endif
 
             strPattern::strTrack::strStep* step = &currentPattern->track[tr].step[destinationStep];
 
@@ -2829,7 +2955,14 @@ AUDIO_CORE_FLASH void Sequencer::handleNoteOn(
 
                     player.track[tr].recOpen = 1;
                     player.track[tr].recNoteOnStepIdx = destinationStep;
-
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+                    player.track[tr].recQuantFwdSteps = quantApplied ? quantFwd : 0;
+                    if (quantApplied)
+                    {
+                        step->micromove = quantMicromove;
+                    }
+                    else
+#endif
                     if (recMicrotiming())
                     {
                         step->micromove =
@@ -2934,14 +3067,37 @@ AUDIO_CORE_FLASH void Sequencer::handleNoteOn(
                     mtInterface.isPatternScreenActive() &&
                     mtPopups.getStepPopupState() == stepPopupNone)
                 {
+                    uint8_t entryStep = sel->firstStep;
+                    int8_t entryMicromove = -2; // -2: not Step Quantized
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+                    {
+                        uint8_t sqStep;
+                        int8_t sqMicromove;
+                        if (stepQuantizeTarget(trackIdx, sel->firstStep, sqStep, sqMicromove))
+                        {
+                            entryStep = sqStep;
+                            entryMicromove = sqMicromove;
+                        }
+                    }
+#endif
                     strPattern::strTrack::strStep* step =
-                      &currentPattern->track[trackIdx].step[sel->firstStep];
+                      &currentPattern->track[trackIdx].step[entryStep];
+
+                    if (entryMicromove != -2 &&
+                        (!step->isNoteEmpty() || step->fx[0].type != 0 || step->fx[1].type != 0))
+                    {
+                        break; // Step Quantize never overwrites an occupied step; the cursor still advances
+                    }
 
                     newFileManager.storePatternUndoRevision();
 
                     step->note = note;
                     step->instrument = changeInstrumentInSpecificOrder(
                       mtProject.values.lastUsedInstrument, 0, !isSampleTrack(trackIdx));
+                    if (entryMicromove != -2)
+                    {
+                        step->micromove = entryMicromove;
+                    }
 
                     wasChangeInPattern = true;
 
@@ -3056,7 +3212,7 @@ void Sequencer::handleNoteOff(byte channel, // pochodzenie grida np. GRID_OUTSID
                         player.track[tr].noteOpen = 0;
                     }
 
-                    if (wasRecOpen && !padInstrumentEdit && !player.preRecMetronomeActive)
+                    if (wasRecOpen && !padInstrumentEdit && !player.preRecMetronomeActive && noteOffMarkerEnabled())
                     {
                         uint8_t destinationStep = getDestRecordingStep(tr, !recMicrotiming(), true);
                         strPattern::strTrack::strStep* step =
@@ -3128,7 +3284,7 @@ void Sequencer::handleNoteOff(byte channel, // pochodzenie grida np. GRID_OUTSID
                         continue;
                     }
 
-                    if (wasRecOpen && !player.preRecMetronomeActive)
+                    if (wasRecOpen && !player.preRecMetronomeActive && noteOffMarkerEnabled())
                     {
                         strPattern::strTrack::strStep* step =
                           &currentPattern->track[tr].step[destinationStep];

@@ -133,12 +133,24 @@ void cShiftPattern::update()
 {
     if (shownValid)
     {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+        if (category != categoryPatternSettings)
+        {
+            return;
+        }
+#endif
         refreshValues(false);
     }
 }
 
 bool cShiftPattern::isColumnSelectable(uint8_t column) const
 {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    if (category == categoryQuantize)
+    {
+        return column < 8; // all seven controls are selectable; Bypass only blocks editing
+    }
+#endif
     switch (column)
     {
         case kColCategory:
@@ -194,12 +206,24 @@ void cShiftPattern::changeCategory(int16_t value, bool rollOver)
     }
 
     category = next;
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    // The categories have different controls: redraw the whole screen.
+    showDefaultScreen();
+#else
     showCategory();
     display.synchronizeRefresh();
+#endif
 }
 
 void cShiftPattern::changeSelectedValue(int16_t value)
 {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    if (category == categoryQuantize)
+    {
+        changeQuantizeValue(value);
+        return;
+    }
+#endif
     switch (selectedPlace)
     {
         case kColLength:

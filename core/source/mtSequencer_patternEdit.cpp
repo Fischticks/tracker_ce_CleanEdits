@@ -1279,6 +1279,26 @@ void Sequencer::setSelectionNote(int16_t value)
     if (!isSelectionCorrect(sel))
         return;
 
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    cancelStepQuantizeAdvance();
+    int8_t sqMicromove = -2; // -2: not Step Quantized
+    if (isSingleSelection(sel))
+    {
+        uint8_t sqStep;
+        int8_t mm;
+        if (stepQuantizeTarget(sel->firstTrack, sel->firstStep, sqStep, mm))
+        {
+            sqMicromove = mm;
+            strPattern::strTrack::strStep* dest = &currentPattern->track[sel->firstTrack].step[sqStep];
+            if (!dest->isNoteEmpty() || dest->fx[0].type != 0 || dest->fx[1].type != 0)
+            {
+                return; // Step Quantize never overwrites an occupied step; the cursor still advances
+            }
+            sel->firstStep = sel->lastStep = sqStep;
+        }
+    }
+#endif
+
     bool somethingWasChanged = false;
     newFileManager.storePatternUndoRevision();
 
@@ -1299,6 +1319,12 @@ void Sequencer::setSelectionNote(int16_t value)
                     mtProject.values.lastUsedInstrument = step->instrument;
                 }
                 step->note = value;
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+                if (sqMicromove != -2)
+                {
+                    step->micromove = sqMicromove;
+                }
+#endif
 
                 somethingWasChanged = true;
             }
