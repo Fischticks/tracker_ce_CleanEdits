@@ -1265,6 +1265,11 @@ void cInstrumentEditor::changeEnvState(int idx, int16_t value)
     {
         instrumentPlayer[i].setRefreshBit(statusByte);
     }
+    if (envIdx == envFinetune)
+    {
+        for (int i = 0; i < 8; i++)
+            instrumentPlayer[i].setRefreshBit(FINETUNE_MASK);
+    }
 
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
 
@@ -1600,8 +1605,9 @@ void cInstrumentEditor::changeLfoAmount(int idx, int16_t value)
 
     if (IE->editorInstrument->envelope[envIdx].loop == 3)
     {
-        IE->editorInstrument->envelope[envIdx].amount =
-          std::max(0.0f, IE->editorInstrument->lfo[envIdx].amount);
+        IE->editorInstrument->envelope[envIdx].amount = IE->editorInstrument->lfo[envIdx].amount;
+        if (IE->editorInstrument->envelope[envIdx].amount < 0.0f)
+            IE->editorInstrument->envelope[envIdx].amount = 0.0f;
     }
 
     uint32_t statusByte = 0;
@@ -1649,6 +1655,11 @@ static void triggerEnvelopeRefresh(int idx)
     for (int i = 0; i < 8; i++)
     {
         instrumentPlayer[i].setRefreshBit(statusByte);
+    }
+    if (envIdx == envFinetune)
+    {
+        for (int i = 0; i < 8; i++)
+            instrumentPlayer[i].setRefreshBit(FINETUNE_MASK);
     }
 }
 
@@ -3812,6 +3823,9 @@ void cInstrumentEditor::changeAmountSub(int16_t value)
         }
         default: break;
     }
+    if (envSlot == envFinetune)
+        sendBit |= FINETUNE_MASK;
+
     if (sendBit)
     {
         for (int i = 0; i < 8; ++i)
