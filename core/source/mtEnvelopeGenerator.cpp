@@ -535,13 +535,21 @@ float envelopeGenerator::fMap(float x, float in_min, float in_max, float out_min
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+float envelopeGenerator::shapeLfoOutput(float canonical) const
+{
+    if (!envelope || (envelope->loop != 1 && envelope->loop != 3))
+        return canonical;
+    const float shaped = lfoUnipolar ? (canonical + 1.0f) * 0.5f : canonical;
+    return shaped * lfoDepth;
+}
+
 float envelopeGenerator::getOut()
 {
     if (!envelope || !envelope->enable)
         return 0.0;
 
     calc();
-    return (envTemp.output);
+    return shapeLfoOutput(envTemp.output);
 }
 
 float envelopeGenerator::getLastOut()
@@ -550,7 +558,7 @@ float envelopeGenerator::getLastOut()
     if (!envelope || !envelope->enable)
         return 0.0;
 
-    return (envTemp.output);
+    return shapeLfoOutput(envTemp.output);
 }
 
 void envelopeGenerator::syncTrackerSeq(uint32_t val, float seqSpeed)

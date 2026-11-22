@@ -1670,6 +1670,15 @@ AUDIO_CORE_RAM void playerEngine ::modFineTune(int8_t value)
     }
 }
 
+// High-resolution pitch modulation is cached as a ratio by each playback channel.
+AUDIO_CORE_RAM void playerEngine ::modPitchModulation(float cents)
+{
+    for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
+    {
+        playMemPtr[channel]->setPitchModulationCents(cents);
+    }
+}
+
 AUDIO_CORE_RAM void playerEngine ::modPanning(int16_t value)
 {
     float gainR = 0, gainL = 0;
@@ -2557,8 +2566,18 @@ void playerEngine::calcLfoBasedEnvelope(envelopeGenerator::strEnv* env,
 {
     env->loop = loopMode;
     env->enable = 1;
-    env->amount = lfo->amount;
-    env->sustain = lfo->amount;
+    // Non-amplitude LFOs run at unit depth. Polarity and signed depth are applied once
+    // after canonical bipolar waveform generation by envelopeGenerator.
+    if (!isAmp)
+    {
+        env->amount = 1.0f;
+        env->sustain = 1.0f;
+    }
+    else
+    {
+        env->amount = lfo->amount;
+        env->sustain = lfo->amount;
+    }
 
     uint8_t envelopeConstrain =
       isAmp ? CONSTRAIN_SPEED_AMP_ENVELOPE : CONSTRAIN_SPEED_OTHER_ENVELOPE;

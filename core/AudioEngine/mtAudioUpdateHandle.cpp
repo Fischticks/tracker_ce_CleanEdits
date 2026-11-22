@@ -254,8 +254,13 @@ inline void playerEngine::handleUpdateRefreshFinetune()
             currentEnvelopeModification[envFinetune] = 0;
         }
 
-        int32_t localFinetuneMod =
-          currentEnvelopeModification[envFinetune] * MAX_INSTRUMENT_FINETUNE;
+        const strInstrument& pitchInstrument = mtProject.instrument[currentInstrument_idx];
+        const float pitchDepthCents =
+          (float)pitchInstrument.pitchModSemitones * 100.0f + (float)pitchInstrument.pitchModCents;
+        modPitchModulation(currentEnvelopeModification[envFinetune] * pitchDepthCents);
+
+        // Extended pitch modulation is independent of ordinary fine-tune.
+        int32_t localFinetuneMod = 0;
 
         int16_t localFinetune = 0;
 

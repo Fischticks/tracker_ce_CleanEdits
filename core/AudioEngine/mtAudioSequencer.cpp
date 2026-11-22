@@ -2204,6 +2204,10 @@ void playerEngine::initEnvelopesParameters(uint8_t n, envelopeGenerator::strEnv*
           mtProject.instrument[currentInstrument_idx].lfo[n].shape,
           mtProject.instrument[currentInstrument_idx].lfo[n].wtBend,
           mtProject.instrument[currentInstrument_idx].lfo[n].wtSust);
+        const strInstrument& lfoInstr = mtProject.instrument[currentInstrument_idx];
+        const float signedDepth = lfoInstr.lfo[n].amount;
+        const bool unipolar = ((lfoInstr.lfoPolarityMask >> n) & 1u) != 0;
+        envelopePtr[n]->setLfoShaping(signedDepth, unipolar);
     }
 }
 
