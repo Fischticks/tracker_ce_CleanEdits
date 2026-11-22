@@ -1422,8 +1422,11 @@ bool cInstrumentEditor::showAmountSub()
     const uint32_t baseStyle = controlStyleShow | controlStyleBackground | shadow | gradient;
     if (sub == kSubAmount)
     {
+        const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
+        const uint32_t amountStyle = (envSlot == envAmp) ? controlStyleValue_0_100
+                                                         : controlStyleValueLeftRight_100_100;
         display.setControlText(label[col], "Amount");
-        display.setControlStyle(barControl[col], baseStyle | controlStyleValue_0_100);
+        display.setControlStyle(barControl[col], baseStyle | amountStyle);
         display.setControlShow(barControl[col]);
         return false;
     }
