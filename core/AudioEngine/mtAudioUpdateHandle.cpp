@@ -180,6 +180,12 @@ inline void playerEngine::handleUpdateEnvelope(uint8_t type, bool enableConditio
                 }
                 if (isActiveEnvelope)
                 {
+                    // Live polarity/depth edits update only output shaping; phase and random S&H
+                    // timing remain owned by the envelope generator and are not restarted.
+                    const strInstrument& lfoInstr = mtProject.instrument[currentInstrument_idx];
+                    envelopePtr[type]->setLfoShaping(
+                      lfoInstr.lfo[type].amount,
+                      ((lfoInstr.lfoPolarityMask >> type) & 1u) != 0);
                     currentEnvelopeModification[type] = envelopePtr[type]->getOut();
                     if (type == envGranLen &&
                         mtProject.instrument[currentInstrument_idx].playMode == playModeGranular)
@@ -222,6 +228,8 @@ inline void playerEngine::handleUpdateEndReleaseAction()
             {
                 currentEnvelopeModification[i] = 0;
                 envelopePtr[i]->stop();
+                if (i == envFinetune)
+                    refreshRegister |= FINETUNE_MASK;
             }
         }
     }
