@@ -521,6 +521,12 @@ void cPatternEditor::refreshPattern()
     {
         if (sequencer.isPlayingSelectionLooped())
         {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+            if (trackerPattern.actualStep != trackerPattern.playheadPosition)
+            {
+                sequencer.invalidateStepQuantizePosition();
+            }
+#endif
             trackerPattern.actualStep = trackerPattern.playheadPosition;
             trackerPattern.selectState = 1;
         }
@@ -534,12 +540,21 @@ void cPatternEditor::refreshPattern()
             trackerPattern.selectState = 1;
             trackerPattern.playheadStartTrack = 0;
             trackerPattern.playheadEndTrack = 7;
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+            if (trackerPattern.actualStep != trackerPattern.playheadPosition)
+            {
+                sequencer.invalidateStepQuantizePosition();
+            }
+#endif
             trackerPattern.actualStep = trackerPattern.playheadPosition;
         }
         else if (!sequencer.isPlay())
         {
             if (trackerPattern.actualStep > trackerPattern.patternLength - 1)
             {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+                sequencer.invalidateStepQuantizePosition();
+#endif
                 trackerPattern.actualStep = 0;
             }
         }
@@ -563,6 +578,9 @@ void cPatternEditor::refreshPattern()
         {
             if (trackerPattern.actualStep > trackerPattern.patternLength - 1)
             {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+                sequencer.invalidateStepQuantizePosition();
+#endif
                 trackerPattern.actualStep = 0;
             }
         }
@@ -576,6 +594,9 @@ void cPatternEditor::refreshPattern()
     {
         lastPatternNumber = mtProject.values.actualPattern;
         lastPatternLength = seq->track[0].length;
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+        sequencer.invalidateStepQuantizePosition();
+#endif
 
         if (trackerPattern.selectState == 2) // konczenie i dezaktywacja zaznaczania
         {
@@ -1334,7 +1355,12 @@ void cPatternEditor::changeActualPatternLength(int16_t value)
     trackerPattern.patternLength = pattern->track[0].length + 1;
 
     if (trackerPattern.actualStep > trackerPattern.patternLength - 1)
+    {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+        sequencer.invalidateStepQuantizePosition();
+#endif
         trackerPattern.actualStep = trackerPattern.patternLength - 1;
+    }
 
     showLength();
 
@@ -1375,7 +1401,12 @@ void cPatternEditor::changeActualPatternLengthByDefinedValues(int16_t dir)
     trackerPattern.patternLength = pattern->track[0].length + 1;
 
     if (trackerPattern.actualStep > trackerPattern.patternLength - 1)
+    {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+        sequencer.invalidateStepQuantizePosition();
+#endif
         trackerPattern.actualStep = trackerPattern.patternLength - 1;
+    }
 
     showLength();
 
@@ -1407,7 +1438,12 @@ void cPatternEditor::applyActualPatternLength(int16_t value)
     trackerPattern.patternLength = pattern->track[0].length + 1;
 
     if (trackerPattern.actualStep > trackerPattern.patternLength - 1)
+    {
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+        sequencer.invalidateStepQuantizePosition();
+#endif
         trackerPattern.actualStep = trackerPattern.patternLength - 1;
+    }
 
     newFileManager.setActualPatternStructChanged();
 }
