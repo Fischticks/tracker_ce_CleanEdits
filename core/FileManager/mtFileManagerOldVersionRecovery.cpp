@@ -34,6 +34,7 @@ static void recoveryInstrumentVersion5();
 static void recoveryInstrumentVersion6();
 static void recoveryInstrumentVersion7();
 static void recoveryInstrumentVersion8();
+static void recoveryInstrumentVersion9();
 
 mtVersionRecovery versionRecovery;
 
@@ -68,6 +69,7 @@ mtVersionRecovery::mtVersionRecovery()
     recoveryInstrumentFunction[5] = recoveryInstrumentVersion6;
     recoveryInstrumentFunction[6] = recoveryInstrumentVersion7;
     recoveryInstrumentFunction[7] = recoveryInstrumentVersion8;
+    recoveryInstrumentFunction[8] = recoveryInstrumentVersion9;
 }
 // zwraca wskaznik do aktywnego odczytanego projektu
 strMtProjectRemote* mtVersionRecovery::getReadedProject()
@@ -472,4 +474,11 @@ static void recoveryInstrumentVersion8()
     receivedInstrument->instrumentDataAndHeader.instrument.volume =
       volumeConverter.convertInstrumentVolumeVersion1300to1302(
         receivedInstrument->instrumentDataAndHeader.instrument.volume);
+}
+
+static void recoveryInstrumentVersion9()
+{
+    strInstrumentFile* receivedInstrument = versionRecovery.getReadedInstrument();
+    receivedInstrument->instrumentDataAndHeader.instrument.sampleRateReduction = 0;
+    receivedInstrument->instrumentDataAndHeader.instrument.toneFilter = 0;
 }

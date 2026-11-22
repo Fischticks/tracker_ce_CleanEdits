@@ -34,8 +34,16 @@ AudioVoice::AudioVoice()
     for (int channel = 0; channel < VoiceChannels::kChannelsCount; channel++)
     {
         connections.push_back(new AudioConnection(&memoryPlayer[channel], &bitDepth[channel]));
-        connections.push_back(new AudioConnection(&bitDepth[channel], &filter[channel]));
-        connections.push_back(new AudioConnection(&filter[channel], &amplifier[channel]));
+        connections.push_back(new AudioConnection(&bitDepth[channel],
+                                                  channel,
+                                                  &sampleRateReduction,
+                                                  channel));
+        connections.push_back(new AudioConnection(&sampleRateReduction,
+                                                  channel,
+                                                  &filter[channel],
+                                                  0));
+        connections.push_back(new AudioConnection(&filter[channel], 0, &toneFilter, channel));
+        connections.push_back(new AudioConnection(&toneFilter, channel, &amplifier[channel], 0));
         connections.push_back(new AudioConnection(&amplifier[channel], 0, &stereoMirror, channel));
         connections.push_back(
           new AudioConnection(&stereoMirror, channel, &panningAmplifier[channel], 0));

@@ -57,6 +57,8 @@ static void functEffectSelectReverb();
 static void functEffectSelectDelay();
 static void functEffectSelectOverdrive();
 static void functEffectSelectBitDepth();
+static void functEffectSelectSampleRateReduction();
+static void functEffectSelectToneFilter();
 static void functOpenInstrumentSynthesizer();
 static void functEffectBack();
 
@@ -425,9 +427,11 @@ void cInstrumentEditor::setEffectScreenFunct()
     ip->clearButtonsRange(interfaceButton0, interfaceButton7);
     ip->setButtonObj(interfaceButton0, buttonPress, functEffectSelectOverdrive);
     ip->setButtonObj(interfaceButton1, buttonPress, functEffectSelectBitDepth);
-    ip->setButtonObj(interfaceButton2, buttonPress, functEffectSelectReverb);
-    ip->setButtonObj(interfaceButton3, buttonPress, functEffectSelectDelay);
-    ip->setButtonObj(interfaceButton4, buttonPress, functOpenInstrumentSynthesizer);
+    ip->setButtonObj(interfaceButton2, buttonPress, functEffectSelectSampleRateReduction);
+    ip->setButtonObj(interfaceButton3, buttonPress, functEffectSelectToneFilter);
+    ip->setButtonObj(interfaceButton4, buttonPress, functEffectSelectReverb);
+    ip->setButtonObj(interfaceButton5, buttonPress, functEffectSelectDelay);
+    ip->setButtonObj(interfaceButton6, buttonPress, functOpenInstrumentSynthesizer);
 
     ip->setButtonObj(interfaceButton7, buttonPress, functEffectBack);
 }
@@ -442,8 +446,10 @@ void cInstrumentEditor::changeParamValue(int value, ValueChangeSource source)
         {
             case 0: cInstrumentEditor::changeParamsOverdrive(value); break;
             case 1: cInstrumentEditor::changeParamsBitDepth(value); break;
-            case 2: cInstrumentEditor::changeParamsReverbSend(value); break;
-            case 3: cInstrumentEditor::changeParamsDelaySend(value); break;
+            case 2: cInstrumentEditor::changeParamsSampleRateReduction(value); break;
+            case 3: cInstrumentEditor::changeParamsToneFilter(value); break;
+            case 4: cInstrumentEditor::changeParamsReverbSend(value); break;
+            case 5: cInstrumentEditor::changeParamsDelaySend(value); break;
             default: break;
         }
         return;
@@ -956,8 +962,10 @@ static void functDelete(uint8_t state)
             {
                 case 0: IE->setDefaultOverdrive(); break;
                 case 1: IE->setDefaultBitDepth(); break;
-                case 2: IE->setDefaultReverbSend(); break;
-                case 3: IE->setDefaultDelaySend(); break;
+                case 2: IE->setDefaultSampleRateReduction(); break;
+                case 3: IE->setDefaultToneFilter(); break;
+                case 4: IE->setDefaultReverbSend(); break;
+                case 5: IE->setDefaultDelaySend(); break;
             }
 
             return;
@@ -2051,6 +2059,44 @@ void cInstrumentEditor::changeParamsBitDepth(int16_t value)
         IE->showParamsBitDepth();
 }
 
+void cInstrumentEditor::changeParamsSampleRateReduction(int16_t value)
+{
+    int16_t nextValue = (int16_t)IE->editorInstrument->sampleRateReduction + value;
+    if (nextValue < 0)
+        nextValue = 0;
+    else if (nextValue > 255)
+        nextValue = 255;
+    IE->editorInstrument->sampleRateReduction = (uint8_t)nextValue;
+
+    for (uint8_t i = 0; i < 8; i++)
+        instrumentPlayer[i].setRefreshBit(SAMPLE_RATE_REDUCTION_MASK);
+
+    newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+
+    if (mtInterface.isInstrumentParamsScreenActive() &&
+        (IE->mode == mtInstrumentEditorMode::mtInstEditModeParams) && IE->isEffectsWindow)
+        IE->showParamsSampleRateReduction();
+}
+
+void cInstrumentEditor::changeParamsToneFilter(int16_t value)
+{
+    int16_t nextValue = (int16_t)IE->editorInstrument->toneFilter + value;
+    if (nextValue < -100)
+        nextValue = -100;
+    else if (nextValue > 100)
+        nextValue = 100;
+    IE->editorInstrument->toneFilter = (int8_t)nextValue;
+
+    for (uint8_t i = 0; i < 8; i++)
+        instrumentPlayer[i].setRefreshBit(TONE_FILTER_MASK);
+
+    newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+
+    if (mtInterface.isInstrumentParamsScreenActive() &&
+        (IE->mode == mtInstrumentEditorMode::mtInstEditModeParams) && IE->isEffectsWindow)
+        IE->showParamsToneFilter();
+}
+
 void changeParamsVelocity(int16_t value)
 {
     uint8_t* temp_velocity =
@@ -3129,13 +3175,13 @@ void cInstrumentEditor::setDefaultValue(uint8_t place)
 
 static void functEffectSelectReverb()
 {
-    IE->selectedPlaceSends = 2;
+    IE->selectedPlaceSends = 4;
     IE->showSendScreenFrame();
 }
 
 static void functEffectSelectDelay()
 {
-    IE->selectedPlaceSends = 3;
+    IE->selectedPlaceSends = 5;
     IE->showSendScreenFrame();
 }
 
@@ -3148,6 +3194,18 @@ static void functEffectSelectOverdrive()
 static void functEffectSelectBitDepth()
 {
     IE->selectedPlaceSends = 1;
+    IE->showSendScreenFrame();
+}
+
+static void functEffectSelectSampleRateReduction()
+{
+    IE->selectedPlaceSends = 2;
+    IE->showSendScreenFrame();
+}
+
+static void functEffectSelectToneFilter()
+{
+    IE->selectedPlaceSends = 3;
     IE->showSendScreenFrame();
 }
 
@@ -3290,6 +3348,24 @@ void cInstrumentEditor::setDefaultBitDepth()
     }
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     IE->showParamsBitDepth();
+}
+
+void cInstrumentEditor::setDefaultSampleRateReduction()
+{
+    IE->editorInstrument->sampleRateReduction = defaultInstrumentParams.sampleRateReduction;
+    for (uint8_t i = 0; i < 8; i++)
+        instrumentPlayer[i].setRefreshBit(SAMPLE_RATE_REDUCTION_MASK);
+    newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+    IE->showParamsSampleRateReduction();
+}
+
+void cInstrumentEditor::setDefaultToneFilter()
+{
+    IE->editorInstrument->toneFilter = defaultInstrumentParams.toneFilter;
+    for (uint8_t i = 0; i < 8; i++)
+        instrumentPlayer[i].setRefreshBit(TONE_FILTER_MASK);
+    newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+    IE->showParamsToneFilter();
 }
 
 // env screen

@@ -41,6 +41,7 @@ uint8_t playerEngine ::noteOn(uint8_t instr_idx, int8_t note, int8_t _velocity)
     handleNoteOnReverbSend();
 
     handleNoteOnBitCrusher();
+    handleNoteOnInstrumentEffects();
 
     status = 1; // playMemPtr->play(instr_idx,note);
     if (isTrackDisplayed)
@@ -112,6 +113,7 @@ AUDIO_CORE_RAM uint8_t playerEngine ::noteOn(uint8_t instr_idx,
     handleFxNoteOnPanning();
 
     handleFxNoteOnBitDepth();
+    handleNoteOnInstrumentEffects();
 
     handleFxNoteOnDelaySend();
 
@@ -475,6 +477,14 @@ AUDIO_CORE_RAM void playerEngine::handleNoteOnPanning()
 void playerEngine::handleNoteOnBitCrusher()
 {
     modBitDepth(mtProject.instrument[currentInstrument_idx].bitDepth);
+}
+
+AUDIO_CORE_RAM void playerEngine::handleNoteOnInstrumentEffects()
+{
+    sampleRateReductionPtr->reset();
+    toneFilterPtr->reset();
+    modSampleRateReduction(mtProject.instrument[currentInstrument_idx].sampleRateReduction);
+    modToneFilter(mtProject.instrument[currentInstrument_idx].toneFilter);
 }
 
 AUDIO_CORE_RAM void playerEngine::handleNoteOnDelaySend()

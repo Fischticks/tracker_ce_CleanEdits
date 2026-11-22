@@ -346,24 +346,24 @@ void audioEngine::connectVoiceToMixer(AudioVoice* voice, MixerAndFxs<kVoices>* m
                           idx));
 
     connections.push_back(
-      new AudioConnection(voice->getFilter(AudioVoice::VoiceChannels::kLeft),
-                          0,
+      new AudioConnection(voice->getToneFilter(),
+                          AudioVoice::VoiceChannels::kLeft,
                           mixerAndFxs->getPreFxMixer(MixerAndFxs<kVoices>::FxType::kReverb),
                           idx));
     connections.push_back(
-      new AudioConnection(voice->getFilter(AudioVoice::VoiceChannels::kRight),
-                          0,
+      new AudioConnection(voice->getToneFilter(),
+                          AudioVoice::VoiceChannels::kRight,
                           mixerAndFxs->getPreFxMixer(MixerAndFxs<kVoices>::FxType::kReverb),
                           kVoices + kInputsChannels + idx));
 
     connections.push_back(
-      new AudioConnection(voice->getFilter(AudioVoice::VoiceChannels::kLeft),
-                          0,
+      new AudioConnection(voice->getToneFilter(),
+                          AudioVoice::VoiceChannels::kLeft,
                           mixerAndFxs->getPreFxMixer(MixerAndFxs<kVoices>::FxType::kDelay),
                           idx));
     connections.push_back(
-      new AudioConnection(voice->getFilter(AudioVoice::VoiceChannels::kRight),
-                          0,
+      new AudioConnection(voice->getToneFilter(),
+                          AudioVoice::VoiceChannels::kRight,
                           mixerAndFxs->getPreFxMixer(MixerAndFxs<kVoices>::FxType::kDelay),
                           kVoices + kInputsChannels + idx));
 }
@@ -1625,6 +1625,9 @@ playerEngine::playerEngine()
           audioVoice.getPanningAmplifier((AudioVoice::VoiceChannels)channel));
         rmsPtr.push_back(audioVoice.getRMS((AudioVoice::VoiceChannels)channel));
     }
+    sampleRateReductionPtr = audioVoice.getSampleRateReduction();
+    toneFilterPtr = audioVoice.getToneFilter();
+
     envelopePtr[envCutoff] =
       audioVoice.getEnvelopeGenerator(AudioVoice::EnvelopeGeneratorType::kFilter);
     envelopePtr[envWtPos] =
@@ -1748,6 +1751,16 @@ AUDIO_CORE_RAM void playerEngine ::modBitDepth(uint8_t value)
     {
         bitDepthPtr[channel]->setBitDepth(value);
     }
+}
+
+AUDIO_CORE_RAM void playerEngine ::modSampleRateReduction(uint8_t value)
+{
+    sampleRateReductionPtr->setReduction(value);
+}
+
+AUDIO_CORE_RAM void playerEngine ::modToneFilter(int8_t value)
+{
+    toneFilterPtr->setValue(value);
 }
 
 AUDIO_CORE_RAM void playerEngine ::modWavetableWindow(uint16_t value)
@@ -2083,6 +2096,10 @@ uint8_t playerEngine ::noteOnWithoutInstrument(std::vector<int16_t*> addr,
     modDelaySend(AMP_MUTED);
     modReverbSend(AMP_MUTED);
     modBitDepth(BIT_DEPTH_MAX);
+    sampleRateReductionPtr->reset();
+    toneFilterPtr->reset();
+    modSampleRateReduction(0);
+    modToneFilter(0);
     modOverdrive(OVERDRIVE_DISABLED);
 
     engine.setLimiterAttack(300);

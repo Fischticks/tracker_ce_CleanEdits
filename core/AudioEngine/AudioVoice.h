@@ -46,7 +46,9 @@ class AudioVoice
     AudioStereoMirror* getStereoMirror() { return &stereoMirror; }
     AudioPlayMemory* getMemoryPlayer(VoiceChannels channel);
     AudioBitDepth* getBitDepth(VoiceChannels channel);
+    AudioSampleRateReduction* getSampleRateReduction() { return &sampleRateReduction; }
     AudioFilterStateVariable* getFilter(VoiceChannels channel);
+    AudioToneFilter* getToneFilter() { return &toneFilter; }
     AudioAmplifier* getAmplifier(VoiceChannels channel);
     AudioAmplifier* getPanningAmplifier(VoiceChannels channel);
     AudioAnalyzeRMS* getRMS(VoiceChannels channel);
@@ -55,7 +57,9 @@ class AudioVoice
   private:
     AudioPlayMemory memoryPlayer[VoiceChannels::kChannelsCount];
     AudioBitDepth bitDepth[VoiceChannels::kChannelsCount];
+    AudioSampleRateReduction sampleRateReduction;
     AudioFilterStateVariable filter[VoiceChannels::kChannelsCount];
+    AudioToneFilter toneFilter;
     AudioAmplifier amplifier[VoiceChannels::kChannelsCount];
     AudioStereoMirror stereoMirror;
     AudioAmplifier panningAmplifier[VoiceChannels::kChannelsCount];

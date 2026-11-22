@@ -300,6 +300,8 @@ class playerEngine
     void modResonance(float value);
     void modOverdrive(uint8_t value);
     void modBitDepth(uint8_t value);
+    void modSampleRateReduction(uint8_t value);
+    void modToneFilter(int8_t value);
 
     void modSeqPoints(uint32_t sp, uint32_t ep, uint8_t fx_n);
 
@@ -593,6 +595,8 @@ class playerEngine
     friend audioEngine;
 
     AudioVoice audioVoice;
+    AudioSampleRateReduction* sampleRateReductionPtr = nullptr;
+    AudioToneFilter* toneFilterPtr = nullptr;
     std::vector<AudioAmplifier*> panningAmplifierPtr;
     bool voiceIsStereo = false;
     std::vector<AudioPlayMemory*> playMemPtr;
@@ -666,6 +670,7 @@ class playerEngine
     void handleNoteOnGain();
     void handleNoteOnPanning();
     void handleNoteOnBitCrusher();
+    void handleNoteOnInstrumentEffects();
     void handleNoteOnDelaySend();
     void handleNoteOnReverbSend();
     //*****note off
@@ -689,6 +694,8 @@ class playerEngine
     void handleUpdateRefreshReverb();
     inline void handleUpdateRefreshOverdrive();
     inline void handleUpdateRefreshBitDepth();
+    inline void handleUpdateRefreshSampleRateReduction();
+    inline void handleUpdateRefreshToneFilter();
     inline void handleUpdateRefreshWtPos();
     inline void handleUpdateRefreshGranPos();
     inline void handleUpdateRefreshGranLen();
