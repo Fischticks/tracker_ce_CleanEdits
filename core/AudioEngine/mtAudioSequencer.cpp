@@ -1159,6 +1159,7 @@ void playerEngine::fxFinetuneLFO(uint8_t fx_val, uint8_t fx_n)
     }
 
     setSyncParamsLFO(envFinetune);
+    refreshRegister |= FINETUNE_MASK;
 }
 
 //*********************************** END SEQ FX
@@ -2080,10 +2081,17 @@ void playerEngine::endFxFinetuneLFO(uint8_t fx_n)
                       &mtProject.instrument[currentInstrument_idx].envelope[envFinetune]);
                 }
             }
+            else
+            {
+                // Last active source was removed; do not leave a stale pitch ratio on the note.
+                currentEnvelopeModification[envFinetune] = 0.0f;
+                envelopePtr[envFinetune]->stop();
+            }
         }
     }
 
     setSyncParamsLFO(envFinetune);
+    refreshRegister |= FINETUNE_MASK;
 }
 
 AUDIO_CORE_RAM uint8_t playerEngine::isFxVelocity(uint8_t fx_id)

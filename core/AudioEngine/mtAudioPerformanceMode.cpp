@@ -1343,9 +1343,16 @@ void playerEngine::endFinetuneLfoRatePerformanceMode()
                   envFinetune, &mtProject.instrument[currentInstrument_idx].envelope[envFinetune]);
             }
         }
+        else
+        {
+            // No sequencer or instrument fallback remains: release pitch modulation immediately.
+            currentEnvelopeModification[envFinetune] = 0.0f;
+            envelopePtr[envFinetune]->stop();
+        }
     }
 
     setSyncParamsLFO(envFinetune);
 
     trackControlParameter[(int)controlType::performanceMode][(int)parameterList::lfoFinetune] = 0;
+    refreshRegister |= FINETUNE_MASK;
 }
