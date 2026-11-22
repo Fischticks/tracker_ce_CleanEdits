@@ -271,6 +271,8 @@ AUDIO_CORE_FLASH void AudioPlayMemory::setSlideOnPlay(bool upOrDown, uint8_t dst
 
 uint8_t AudioPlayMemory::playForPrev(uint8_t instr_idx, int8_t n)
 {
+    pitchModulationRatio = 1.0f;
+    pitchModActive = false;
     tuneForceFlag = 0;
     pointsForceFlag = 0;
     glideForceFlag = 0;
@@ -289,6 +291,8 @@ uint8_t AudioPlayMemory::playForPrev(uint8_t instr_idx, int8_t n)
 
 uint8_t AudioPlayMemory::playForPrev(int16_t* addr, uint32_t len, uint8_t type)
 {
+    pitchModulationRatio = 1.0f;
+    pitchModActive = false;
     uint32_t startPoint, endPoint;
     int8_t note = 60;
     playing = 0;
@@ -403,6 +407,8 @@ uint8_t AudioPlayMemory::playForPrev(int16_t* addr, uint32_t len, uint8_t type)
 
 uint8_t AudioPlayMemory::playForPrev(int16_t* addr, uint32_t len, uint8_t n, uint8_t type)
 {
+    pitchModulationRatio = 1.0f;
+    pitchModActive = false;
     uint32_t startPoint, endPoint;
     int8_t note = n;
     playing = 0;

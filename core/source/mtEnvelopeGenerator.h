@@ -63,6 +63,8 @@ class envelopeGenerator
     // Output shaping changes never reset the oscillator phase.
     void setLfoShaping(float signedDepth, bool unipolar)
     {
+        if (signedDepth > 1.0f) signedDepth = 1.0f;
+        else if (signedDepth < -1.0f) signedDepth = -1.0f;
         lfoDepth = signedDepth;
         lfoUnipolar = unipolar;
     }
