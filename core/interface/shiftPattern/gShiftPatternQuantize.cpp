@@ -33,7 +33,7 @@ uint8_t divisionDisplayIndex(uint8_t division)
 // Bottom-row names. The full control names (Step Quantize, Quantize Division, Quarter Note Length) do not fit
 // the 100 px column, so they are shortened here.
 const char* const columnNames[8] = { "Category", "Note Off", "Quantize",  "Step Quant",
-                                     "Division", "Strength", "Quarter Len", "Bypass" };
+                                     "Division", "Strength", "Qtr.N Len", "Bypass" };
 
 constexpr uint8_t kToggleNoteOff = 0;
 constexpr uint8_t kToggleQuantize = 1;
