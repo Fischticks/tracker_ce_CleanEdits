@@ -3,6 +3,11 @@
 
 float AudioToneFilter::cutoffHz(int8_t value)
 {
+    if (value < -100)
+        value = -100;
+    else if (value > 100)
+        value = 100;
+
     const int absoluteValue = value < 0 ? -(int)value : (int)value;
     const float t = (float)absoluteValue / 100.0f;
     const float ratio = kMaxCutoffHz / kMinCutoffHz;
