@@ -1476,12 +1476,11 @@ void cInstrumentEditor::changeEnvAmount(int idx, int16_t value)
 
     float fVal = value * 0.01;
 
-    if (IE->editorInstrument->envelope[envIdx].amount + fVal < 0)
-        IE->editorInstrument->envelope[envIdx].amount = 0;
-    else if (IE->editorInstrument->envelope[envIdx].amount + fVal > AMOUNT_MAX)
-        IE->editorInstrument->envelope[envIdx].amount = AMOUNT_MAX;
-    else
-        IE->editorInstrument->envelope[envIdx].amount += fVal;
+    const float minimumAmount = (envIdx == envAmp) ? 0.0f : -AMOUNT_MAX;
+    IE->editorInstrument->envelope[envIdx].amount =
+      clamp<float>(IE->editorInstrument->envelope[envIdx].amount + fVal,
+                   minimumAmount,
+                   AMOUNT_MAX);
 
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
 
@@ -1606,7 +1605,7 @@ void cInstrumentEditor::changeLfoAmount(int idx, int16_t value)
     if (IE->editorInstrument->envelope[envIdx].loop == 3)
     {
         IE->editorInstrument->envelope[envIdx].amount = IE->editorInstrument->lfo[envIdx].amount;
-        if (IE->editorInstrument->envelope[envIdx].amount < 0.0f)
+        if (envIdx == envAmp && IE->editorInstrument->envelope[envIdx].amount < 0.0f)
             IE->editorInstrument->envelope[envIdx].amount = 0.0f;
     }
 
@@ -2676,10 +2675,9 @@ int16_t cInstrumentEditor::getControlChangeDelta(SampleInstrumentParamsCC param,
                              ? IE->editorInstrument->lfo[envIdx].amount
                              : IE->editorInstrument->envelope[envIdx].amount;
             float destValue = map((float)cc_value, 0.0f, 127.0f, 0.0f, AMOUNT_MAX);
-            if (envIdx != envAmp &&
-                (IE->editorInstrument->envelope[envIdx].loop == 1 ||
-                 IE->editorInstrument->envelope[envIdx].loop == 3))
+            if (envIdx != envAmp)
             {
+                // All non-Volume envelope/LFO amounts are bipolar:
                 // CC 0 = -100%, CC 64 = exactly 0%, CC 127 = +100%.
                 destValue = (cc_value <= 64) ? ((float)cc_value - 64.0f) / 64.0f
                                              : ((float)cc_value - 64.0f) / 63.0f;
