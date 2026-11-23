@@ -34,6 +34,7 @@ CXXFLAGS      := -std=c++20 -includecstdint -felide-constructors -Wno-psabi \
                  -mfp16-format=ieee -mword-relocations \
                  -DPRODUCT=WAVE -DPRODUCT_WAVE \
                  -I$(SDK_DIR)/include \
+                 -I$(LXR_DSP_DIR)/include \
                  -I$(REPO_ROOT)/synth/include \
                  -I$(REPO_ROOT)/synth/config \
                  -I$(REPO_ROOT)/util/include \
