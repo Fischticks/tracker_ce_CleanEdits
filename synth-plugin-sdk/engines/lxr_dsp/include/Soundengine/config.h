@@ -1,11 +1,5 @@
 #pragma once
 #include <stdint.h>
-#ifndef true
-#define true 1
-#endif
-#ifndef false
-#define false 0
-#endif
 /* Tracker host sample rate replaces the LXR hardware clock rate (44,140 Hz). */
 #define REAL_FS 44100.0f
 #define REAL_FS2 (REAL_FS * 0.5f)
