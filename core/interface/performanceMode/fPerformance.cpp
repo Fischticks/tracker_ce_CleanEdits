@@ -268,7 +268,10 @@ void cPerformanceMode::toggleFxLatch()
 
 void cPerformanceMode::resetForProjectReplacement()
 {
+    const bool wasPerformanceMode = sequencer.isPerformanceMode();
     sequencer.discardPerformanceModeForProjectReplacement();
+    if (wasPerformanceMode)
+        engine.performanceModeEndAll();
     fxLatchEnabled = false;
     dontClearPerformanceMode = 0;
     performance.turnOff(false);

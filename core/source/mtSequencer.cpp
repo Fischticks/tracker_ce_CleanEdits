@@ -3613,6 +3613,7 @@ void Sequencer::switchRamPatternsNow()
         player.performanceExitBoundarySwapCompleted = true;
     }
     player.restoreWorkspacePatternAfterPerformanceExit = false;
+    player.reloadPatternAfterStop = false;
     int bufferPatternIdx = newFileManager.getLoadedPatternIndex();
     assert(bufferPatternIdx >= 0);
     // The buffer pattern now holds what was playing.
