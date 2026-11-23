@@ -16,7 +16,8 @@
 
 
 #ifndef TRANSIENTGENERATOR_H_
-#define TRANSIENTGENERATOR_H_#include <stdint.h>
+#define TRANSIENTGENERATOR_H_
+#include <stdint.h>
 #include <stdint.h>
 #include "transientTables.h"
 
