@@ -171,9 +171,7 @@ class LxrDrumPocVoice final : public InstrumentVoice
                           AudioBufferStereoRef outputBuffer) final
     {
         auto left = outputBuffer[0];
-        auto right = outputBuffer[1];
         std::fill(left.begin(), left.end(), 0.0f);
-        std::fill(right.begin(), right.end(), 0.0f);
 
         const float sampleRate = sdk::kSampleRate;
         const float invSampleRate = 1.0f / sampleRate;
@@ -193,13 +191,12 @@ class LxrDrumPocVoice final : public InstrumentVoice
                     15.0f, sampleRate * 0.40f);
                 const float modHz = std::min(baseHz * 2.0f, sampleRate * 0.40f);
                 const float mod = std::sin(part.modPhase * 6.28318530718f);
-                const float fmPhase = part.carrierPhase +
-                                      (part.fm * mod * 0.18f);
-                const float carrier = std::sin(fmPhase * 6.28318530718f);
+                const float carrierPhase = part.carrierPhase +
+                    (part.fmMode ? part.fm * mod * 0.18f : 0.0f);
+                const float carrier = std::sin(carrierPhase * 6.28318530718f);
                 const float modulator = std::sin(part.modPhase * 6.28318530718f);
-                const float mixMode = 0.5f * (carrier + modulator * part.fm);
-                const float fmMode = carrier;
-                const float signal = part.fmMode ? fmMode : mixMode;
+                const float mixMode = carrier * (1.0f - part.fm) + modulator * part.fm;
+                const float signal = part.fmMode ? carrier : mixMode;
 
                 const float cutoff = std::clamp(part.cutoff, 80.0f, sampleRate * 0.42f);
                 const float alpha = 1.0f - std::exp(-6.28318530718f * cutoff * invSampleRate);
@@ -221,7 +218,6 @@ class LxrDrumPocVoice final : public InstrumentVoice
             }
             const float out = std::clamp(mixed, -0.95f, 0.95f);
             left[i] = out;
-            right[i] = out;
         }
     }
 
