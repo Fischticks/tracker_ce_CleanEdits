@@ -342,32 +342,19 @@ IN_ITCM_RAM void calcNoiseBlock(OscInfo* osc, int16_t* buf, const uint8_t size ,
 //-----------------------------------------------------------
 int16_t calcNoise(OscInfo* osc)
 {
+	const uint32_t lastPhase = osc->phase;
 	osc->phase += osc->phaseInc;
-
-	//check overflow flag, ( if osc->phase == osc->phaseInc a reset occured ==> retrigger, too
-	APSR_Type apsr;
-	apsr.w = __get_APSR();
-	if(apsr.b.V ||  (osc->phase == osc->phaseInc))
+	if (lastPhase > osc->phase || osc->phase == osc->phaseInc)
 	{
-		//overflow happened -> phaseWrapped
-
-		uint16_t rnd = GetRngValue();
-		if( rnd > 0x00ff)
+		uint16_t rnd = (uint16_t)GetRngValue();
+		if (rnd > 0x00ff)
 		{
-			if( rnd > 0x000f)
-			{
-				osc->output = 32767;
-			}
-			else
-			{
-				osc->output = -32768;
-			}
-
+			osc->output = (rnd > 0x000f) ? 32767 : -32768;
 		}
 	}
 	else
 	{
-			osc->output = 0;
+		osc->output = 0;
 	}
 	return osc->output;
 }
