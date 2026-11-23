@@ -13,8 +13,17 @@ else
 endif
 
 CXX           := $(TOOLCHAIN)g++
+CC            := $(TOOLCHAIN)gcc
 PYTHON        ?= python3
 BUILD_DIR     ?= $(SDK_DIR)/build
+LXR_DSP_DIR   := $(SDK_DIR)/engines/lxr_dsp
+LXR_DSP_SRCS  := $(wildcard $(LXR_DSP_DIR)/src/Soundengine/DSPAudio/*.c)
+LXR_DSP_OBJS  := $(patsubst $(LXR_DSP_DIR)/src/%.c,$(BUILD_DIR)/lxr_dsp/%.o,$(LXR_DSP_SRCS))
+
+LXR_CFLAGS    := -std=gnu11 -O3 -DNDEBUG -Wall -Wextra -fno-common \\
+                 -ffunction-sections -fdata-sections -fno-builtin \\
+                 -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 \\
+                 -I$(LXR_DSP_DIR)/include
 
 CXXFLAGS      := -std=c++20 -includecstdint -felide-constructors -Wno-psabi \
                  -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics \
@@ -70,9 +79,13 @@ clean:
 
 .PHONY: all clean
 
-$(BUILD_DIR)/LXRD.elf: $(SDK_DIR)/engines/lxr_drum_poc.cpp $(SDK_DIR)/include/psyn/psyn_plugin.h $(SDK_DIR)/include/psyn/psyn_cpp_bridge.h $(SDK_DIR)/tools/psyn.ld
+$(BUILD_DIR)/lxr_dsp/%.o: $(LXR_DSP_DIR)/src/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(LXR_CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/LXRD.elf: $(SDK_DIR)/engines/lxr_drum_poc.cpp $(LXR_DSP_OBJS) $(SDK_DIR)/include/psyn/psyn_plugin.h $(SDK_DIR)/include/psyn/psyn_cpp_bridge.h $(SDK_DIR)/tools/psyn.ld
 	@mkdir -p $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) $< $(LDFLAGS) -o $@
+	$(CXX) $(CXXFLAGS) $(SDK_DIR)/engines/lxr_drum_poc.cpp $(LXR_DSP_OBJS) $(LDFLAGS) -o $@
 
 $(BUILD_DIR)/LXRD.psyn: $(BUILD_DIR)/LXRD.elf $(SDK_DIR)/tools/psyn_builder.py
 	$(PYTHON) $(SDK_DIR)/tools/psyn_builder.py \
