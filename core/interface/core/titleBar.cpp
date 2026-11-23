@@ -45,14 +45,16 @@ void TitleBar::initControls()
     prop.colors = display.getTheme().topBarLabelColors;
     prop.style = (controlStyleRightX | controlStyleCenterY | controlStyleFont4);
     rightLabel = display.createControl<cLabel>(&prop);
-    prop.x = 675;
+    prop.x = 582;
     prop.y = 13;
-    prop.w = 85;
+    prop.w = 90;
     prop.colors = display.getTheme().topBarLabelColors;
     prop.style = (controlStyleRightX | controlStyleCenterY | controlStyleFont4);
     prop.text = (char*)"FX LATCH";
     fxLatchLabel = display.createControl<cLabel>(&prop);
     display.setControlHide(fxLatchLabel);
+    if (fxLatchEnabled)
+        display.setControlSize(rightLabel, 180, 0);
 
 #ifdef BATTERY_ENABLED
     prop.style = controlStyleShowBitmap | controlStyleCenterY;
@@ -148,6 +150,10 @@ void TitleBar::setFxLatchEnabled(bool enabled)
     fxLatchEnabled = enabled;
     if (fxLatchLabel < 0)
         return;
+
+    // The right-anchored instrument label shares the title bar row. Narrow it
+    // while the latch marker is visible so the two controls never overlap.
+    display.setControlSize(rightLabel, enabled ? 180 : 270, 0);
     if (enabled)
     {
         display.setControlText(fxLatchLabel, "FX LATCH");
