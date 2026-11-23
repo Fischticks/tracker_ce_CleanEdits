@@ -74,9 +74,15 @@ bool cPerformEngine::turnOff(bool preserveFx)
     bool wasPerformanceMode = sequencer.isPerformanceMode();
     if (wasPerformanceMode)
         sequencer.exitPerformanceMode();
-    if (!preserveFx)
+    if (preserveFx)
     {
-        engine.performanceModeEndAll();
+        retainedFxActive = true;
+    }
+    else
+    {
+        if (wasPerformanceMode || retainedFxActive)
+            engine.performanceModeEndAll();
+        retainedFxActive = false;
         for (uint8_t track = 0; track < kPerformanceTracks; track++)
             tracksPerformanceState[track] = 0;
         resetAllFx();

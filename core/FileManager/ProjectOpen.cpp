@@ -139,8 +139,8 @@ void ProjectOpen::openProjectInit()
     sampleMemoryCopied = 0;
     copyStep = 0;
 
-    performanceMode.resetForProjectReplacement();
     newFileManager.stopAudioEngine();
+    performanceMode.resetForProjectReplacement();
 
     listProjectNewInstruments();
 

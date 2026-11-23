@@ -123,6 +123,7 @@ class cPerformEngine
     uint8_t dataSourcesCount;
 
     bool editState;
+    bool retainedFxActive = false;
     bool isSlotCopied = false;
     uint8_t slotCopied;
 
