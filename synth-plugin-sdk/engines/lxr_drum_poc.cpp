@@ -36,6 +36,7 @@ struct DrumPart
     float filterState = 0.0f;
     float tune = 0.0f;
     float fm = 0.35f;
+    bool fmMode = true;
     float pitchSweep = 0.45f;
     float cutoff = 12000.0f;
     float decaySeconds = 0.24f;
@@ -155,7 +156,7 @@ class LxrDrumPocVoice final : public InstrumentVoice
         const float v = *value;
         switch (localParam)
         {
-            case kMode: part.fm = (v >= 0.5f) ? std::max(part.fm, 0.15f) : 0.0f; break;
+            case kMode: part.fmMode = (v >= 0.5f); break;
             case kTune: part.tune = v; break;
             case kFmAmount: part.fm = clamp01(v); break;
             case kPitchSweep: part.pitchSweep = clamp01(v); break;
@@ -198,8 +199,7 @@ class LxrDrumPocVoice final : public InstrumentVoice
                 const float modulator = std::sin(part.modPhase * 6.28318530718f);
                 const float mixMode = 0.5f * (carrier + modulator * part.fm);
                 const float fmMode = carrier;
-                const float signal = (part.fm <= 0.0001f) ? mixMode
-                                                          : (0.35f * mixMode + 0.65f * fmMode);
+                const float signal = part.fmMode ? fmMode : mixMode;
 
                 const float cutoff = std::clamp(part.cutoff, 80.0f, sampleRate * 0.42f);
                 const float alpha = 1.0f - std::exp(-6.28318530718f * cutoff * invSampleRate);
