@@ -1,3 +1,14 @@
+/*
+ * LXR-derived Tracker drum proof of concept.
+ *
+ * Copyright (C) 2012-2026 Erica Synths (upstream LXR DSP source and design).
+ * This file is an independent Tracker-facing POC adaptation and is not an
+ * official Erica Synths product or an endorsed LXR-02 implementation.
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ * See ../LICENSE-LXR-GPL-3.0.txt and ../NOTICE-LXR.md for applicable terms.
+ */
+
 #include "psyn/psyn_cpp_bridge.h"
 #include "PolySynth/sdk/InstrumentVoice.h"
 #include "PolySynth/sdk/SynthVoiceSDK.h"
