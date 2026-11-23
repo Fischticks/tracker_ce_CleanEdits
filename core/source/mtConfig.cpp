@@ -7,6 +7,7 @@
 #include "ThemeManager.h"
 
 #include "mtStructs.h"
+#include "mtMidiSlotSelect.h"
 
 #include "performanceMode/performanceEngine.h"
 
@@ -336,6 +337,8 @@ void checkConfig()
     mtConfig.midi.slaveClockComp =
       clamp(mtConfig.midi.slaveClockComp, (uint8_t)0, (uint8_t)kExternalClockCompMaxVal);
 
+    midiSlotSelectCheckConfig();
+
     // VALUES CHECK  --------------------
     if (mtConfig.values.padsLightBack > 31)
         mtConfig.values.padsLightBack = PADS_LIGHT_BACK_DEFAULT;
@@ -521,6 +524,7 @@ void resetConfig()
     mtConfig.midi.ccInChannel = 0;
     mtConfig.midi.middleC = 2;
     mtConfig.midi.slaveClockComp = kExternalClockCompDefaultVal;
+    midiSlotSelectResetConfig();
 
     // values ----------------------------------------
     mtConfig.values.padsLightBack = PADS_LIGHT_BACK_DEFAULT;
@@ -595,6 +599,8 @@ void recoverConfigFromOldVerison()
     configManager->readData(36, ((uint8_t*)&mtConfig.audioCodecConfig) + 2, 13);
     configManager->readData(52, ((uint8_t*)&mtConfig.firmware) + 2, 5);
     configManager->readData(57, ((uint8_t*)&mtConfig.midi) + 2, 18);
+    // The legacy payload can populate the extension with unrelated bytes.
+    mtConfig.midi.midiSlotSelectConfigMarker = 0;
     configManager->readData(76, ((uint8_t*)&mtConfig.values) + 2, 151);
     configManager->readData(228, ((uint8_t*)&mtConfig.general) + 2, 10);
     configManager->readData(238, ((uint8_t*)&mtConfig.interface) + 2, 1);

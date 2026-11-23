@@ -7,6 +7,9 @@
 #include "imageViewer/imageViewerDefs.h"
 
 #include "polyassert.h"
+#ifdef MOD_MIDI_SLOT_SELECT
+#include "mtMidiSlotSelect.h"
+#endif
 
 #include <array>
 
@@ -197,7 +200,25 @@ const strItemTypeListText notesOutModeSetup{ &mtConfig.midi.notesOutMode, 4, mid
 const strItemTypeListText notesInChanneletup{ &mtConfig.midi.notesInChannel, 17, notesChannel };
 const strItemTypeListText ccInModeSetup{ &mtConfig.midi.ccInMode, 4, midiIn };
 const strItemTypeListText ccInChannelSetup{ &mtConfig.midi.ccInChannel, 17, notesChannel };
+#ifdef MOD_MIDI_SLOT_SELECT
+const strItemTypeListTextWithAction middleCSetup{
+    &mtConfig.midi.middleC, 4, middleC, midiSlotSelectRefreshLabels
+};
+const strItemTypeListText midiSlotSelectEnabledSetup{
+    &mtConfig.midi.midiSlotSelectEnabled, 2, onOffStateTexts
+};
+const strItemTypeListText midiSlotSelectModeSetup{
+    &mtConfig.midi.midiSlotSelectMode, 3, midiSlotSelectModeTexts
+};
+const strItemTypeListText drumKeyStartSetup{
+    &mtConfig.midi.midiSlotSelectStartNote, 128, midiSlotSelectNoteLabels
+};
+const strItemTypeListText whiteKeyOctaveSetup{
+    &mtConfig.midi.midiSlotSelectWhiteKeyOctave, 11, midiSlotSelectOctaveLabels
+};
+#else
 const strItemTypeListText middleCSetup{ &mtConfig.midi.middleC, 4, middleC };
+#endif
 const strItemTypeListTextWithAction slaveClockCompSetup{ &mtConfig.midi.slaveClockComp, std::size(slaveClockComp),  slaveClockComp, setSlaveClockCompValue };
 
 cMenuItem melClockIn(menuMidi, "Clock in", nullptr, menuTypeItemListText, &clockInSetup);
@@ -225,7 +246,32 @@ cMenuItem melCCInChannel(menuMidi,
                          supportedCcInDesc,
                          menuTypeItemListText,
                          &ccInChannelSetup);
+#ifdef MOD_MIDI_SLOT_SELECT
+cMenuItem melMiddleC(
+  menuMidi, "Middle C", nullptr, menuTypeItemListTextWithAction, &middleCSetup);
+cMenuItem melMidiSlotSelect(menuMidi,
+                            "MIDI Slot Select",
+                            midiSlotSelectDesc,
+                            menuTypeItemListText,
+                            &midiSlotSelectEnabledSetup);
+cMenuItem melSlotSelectMode(menuMidi,
+                            "Slot Select Mode",
+                            midiSlotSelectModeDesc,
+                            menuTypeItemListText,
+                            &midiSlotSelectModeSetup);
+cMenuItem melDrumKeyStart(menuMidi,
+                          "Drum/Key Start",
+                          drumKeyStartDesc,
+                          menuTypeItemListText,
+                          &drumKeyStartSetup);
+cMenuItem melWhiteKeyOctave(menuMidi,
+                            "White Key Octave",
+                            whiteKeyOctaveDesc,
+                            menuTypeItemListText,
+                            &whiteKeyOctaveSetup);
+#else
 cMenuItem melMiddleC(menuMidi, "Middle C", nullptr, menuTypeItemListText, &middleCSetup);
+#endif
 cMenuItem melSlaveClockComp(menuMidi,
                             "Clock sync correction",
                             slaveClockCompDesc,

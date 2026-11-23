@@ -28,7 +28,7 @@ A command-line `CUSTOM_DEFINES` replaces the whole default list for that build o
 (note: it is not additive, and a `CUSTOM_DEFINES` set in your shell environment overrides the file as well):
 
 ```
-make clean && make plus CUSTOM_DEFINES="-DMOD_PATTERN_BPM -DMOD_PATTERN_SETTINGS -DMOD_SAMPLE_BOUNDARY_CAPTURE -DMOD_LAZY_CHOP"   # explicitly select all defaults
+make clean && make plus CUSTOM_DEFINES="-DMOD_PATTERN_BPM -DMOD_PATTERN_SETTINGS -DMOD_SAMPLE_BOUNDARY_CAPTURE -DMOD_LAZY_CHOP -DMOD_SHIFT_PATTERN_QUANTIZE -DMOD_MIDI_SLOT_SELECT"   # explicitly select all defaults
 make clean && make plus CUSTOM_DEFINES=""                          # no optional features (stock behaviour)
 ```
 
@@ -50,8 +50,9 @@ make clean && make plus CUSTOM_DEFINES=""                          # no optional
 | Sample Playback Boundary Capture | `MOD_SAMPLE_BOUNDARY_CAPTURE` | Enabled | – | [sample-boundary-capture.md](sample-boundary-capture.md) |
 | Lazy Chop | `MOD_LAZY_CHOP` | Enabled | – | [lazy-chop.md](lazy-chop.md) |
 | Shift + Pattern screen: Quantize (live-record quantize, Step Quantize, Note Off, Bypass) | `MOD_SHIFT_PATTERN_QUANTIZE` | Enabled (approved by the user) | `MOD_PATTERN_SETTINGS`; optional `MOD_PATTERN_BPM` | [shift-pattern-quantize.md](shift-pattern-quantize.md) |
+| MIDI Slot Select (Pattern Editor Instrument column) | `MOD_MIDI_SLOT_SELECT` | Enabled | – | [midi-slot-select.md](midi-slot-select.md) |
 
-All five features are enabled in the default build for Original Tracker, Tracker+ and Tracker Mini. The exact default list is defined only in `custom-firmware.mk`.
+All six features are enabled in the default build for Original Tracker, Tracker+ and Tracker Mini. The exact default list is defined only in `custom-firmware.mk`.
 
 **File-format warning:** with `MOD_PATTERN_BPM` the firmware saves pattern file version 8. Older stock firmware may not load projects
 saved that way; keep a backup of `Projects/` before using such a build on existing projects.
@@ -65,6 +66,9 @@ saved that way; keep a backup of `Projects/` before using such a build on existi
   the Pattern BPM. The engine does not depend on the screen.
 - Quantize (`MOD_SHIFT_PATTERN_QUANTIZE`) adds the Quantize category to the Pattern Settings screen and therefore requires
   `MOD_PATTERN_SETTINGS`. It is independent of `MOD_PATTERN_BPM` and of Sample Playback Markers.
+- MIDI Slot Select (`MOD_MIDI_SLOT_SELECT`) maps incoming MIDI pitches to instrument slots in the Pattern Editor Instrument
+  column. Its four preferences are global MIDI settings; the configuration storage extension is unconditional, so builds with
+  the feature flag disabled preserve the same EEPROM layout. The runtime setting defaults Off.
 
 ## Pattern file versions
 
@@ -85,7 +89,11 @@ The table is updated whenever another feature edits one of these files.
 | `core/source/mtSequencer_patternEdit.cpp` | Quantize (`setSelectionNote`) |
 | `core/FileManager/WorkspaceProjectLoad.cpp` | Quantize (settings reset) |
 | `core/interface/shiftPattern/*` | Pattern Settings, Quantize (category list and dispatch) |
-| `core/source/mtStructs.h` | Pattern BPM |
+| `core/source/mtStructs.h` | Pattern BPM, MIDI Slot Select |
+| `core/source/mtConfig.cpp` | MIDI Slot Select |
+| `core/source/mtMidi.cpp` | MIDI Slot Select |
+| `core/source/mtMidiSlotSelect.cpp/.h`, `mtMidiSlotSelectMapping.h` | MIDI Slot Select |
+| `core/interface/configEditor/configMenu.cpp`, `configMenuDefs.h`, `gConfigEdit.cpp` | MIDI Slot Select |
 | `core/FileManager/fileManagerPattern.cpp` | Pattern BPM |
 | `core/interface/patternEditor/fPatternEdit.cpp`, `patternEditor.h` | Pattern Settings, Quantize (`fPatternEdit.cpp` cursor advance) |
 | `core/interface/core/interface.cpp`, `interfaceDefs.h` | Pattern Settings |

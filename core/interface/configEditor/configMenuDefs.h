@@ -223,6 +223,12 @@ const char* const middleC[4] = {
     "C-6",
 };
 
+const char* const midiSlotSelectModeTexts[3] = {
+    "Drum",
+    "Key",
+    "White Keys Only",
+};
+
 const char* const notesChannel[17] = {
     "ALL", "CH1",  "CH2",  "CH3",  "CH4",  "CH5",  "CH6",  "CH7",  "CH8",
     "CH9", "CH10", "CH11", "CH12", "CH13", "CH14", "CH15", "CH16",
@@ -373,6 +379,19 @@ const char firmUpdDesc[] = {
 const char slaveClockCompDesc[] = { "Allows compensating latency of incoming clock signal by "
                                     "number of clock pulses, where 1 pulse = 1/6 of step. "
                                     "Use this with \"Clock in\" set to MIDI IN jack or USB. " };
+
+const char midiSlotSelectDesc[] = {
+    "Maps incoming MIDI notes to instrument slots while the Pattern Editor Instrument column is selected."
+};
+const char midiSlotSelectModeDesc[] = {
+    "Choose chromatic Drum/Key mapping or White Keys Only mapping."
+};
+const char drumKeyStartDesc[] = {
+    "The first MIDI note mapped to instrument slot 0 in Drum and Key modes."
+};
+const char whiteKeyOctaveDesc[] = {
+    "The starting C octave for White Keys Only mapping."
+};
 
 const char supportedCcInDesc[] = { "Supported incoming CC\nmessages:\n\nCC41 - CC48\n(performance "
                                    "mode track),\n\nCC51 - CC62\n(performance mode slot),"
