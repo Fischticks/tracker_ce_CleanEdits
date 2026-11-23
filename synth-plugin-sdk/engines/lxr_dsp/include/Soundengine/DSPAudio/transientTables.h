@@ -13,7 +13,8 @@
 
 
 #ifndef TRANSIENTTABLES_H_
-#define TRANSIENTTABLES_H_#include <stdint.h>
+#define TRANSIENTTABLES_H_
+#include <stdint.h>
 #include <stdint.h>
 
 #define NUM_TRANSIENTS 12
