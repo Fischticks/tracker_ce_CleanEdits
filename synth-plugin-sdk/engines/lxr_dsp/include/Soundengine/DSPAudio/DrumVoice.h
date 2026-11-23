@@ -42,8 +42,14 @@ typedef struct VoiceStruct {
   OnePoleFilter MixerPageFilter[2];
   float pwm;
 } DrumVoice;
+#ifdef __cplusplus
+extern "C" {
+#endif
 void lxr_drum_voice_init(DrumVoice* voice, uint8_t originalVoiceIndex);
 void lxr_drum_voice_set_phase(DrumVoice* voice, uint8_t phase);
 void lxr_drum_voice_trigger(DrumVoice* voice, uint8_t velocity, uint8_t note);
 void lxr_drum_voice_update(DrumVoice* voice);
 void lxr_drum_voice_render_block(DrumVoice* voice, int16_t* buffer, uint8_t size);
+#ifdef __cplusplus
+}
+#endif
