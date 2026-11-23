@@ -13,7 +13,8 @@
 
 
 #ifndef BUFFERTOOLS_H_
-#define BUFFERTOOLS_H_#include "Soundengine/DSPAudio/dither.h"
+#define BUFFERTOOLS_H_
+#include "Soundengine/DSPAudio/dither.h"
 #include "Soundengine/config.h"
 #include "Soundengine/lxr_compat.h"
 #include <string.h>
