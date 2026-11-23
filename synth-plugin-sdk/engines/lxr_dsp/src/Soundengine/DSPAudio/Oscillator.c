@@ -17,7 +17,7 @@
 
 #include "Soundengine/lxr_compat.h"
 #include "Soundengine/MIDI/MidiNoteNumbers.h"
-#include "Soundengine/MIDI/MidiNoteNumbers.h"
+
 
 static __inline uint32_t freq2PhaseIncr(const float f) //4096
 {
