@@ -13,7 +13,8 @@
 
 
 #ifndef OSCILLATOR_H_
-#define OSCILLATOR_H_#include <stdint.h>
+#define OSCILLATOR_H_
+#include <stdint.h>
 #include "Soundengine/datatypes.h"
 #include "Soundengine/lxr_compat.h"
 #include "Soundengine/DSPAudio/wavetable.h"
