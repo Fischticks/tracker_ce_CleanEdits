@@ -13,7 +13,8 @@
 
 
 #ifndef WAVETABLES_H_
-#define WAVETABLES_H_#include <stdint.h>
+#define WAVETABLES_H_
+#include <stdint.h>
 #include <stdio.h>
 
 #define TABLESIZE 4096
