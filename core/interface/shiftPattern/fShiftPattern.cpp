@@ -1,6 +1,7 @@
 #ifdef MOD_PATTERN_SETTINGS
 
 #include "shiftPattern/shiftPattern.h"
+#include "core/interface.h"
 
 #include <math.h>
 
