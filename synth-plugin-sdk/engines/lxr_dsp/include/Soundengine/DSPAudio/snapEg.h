@@ -13,7 +13,8 @@
 
 
 #ifndef SNAPEG_H_
-#define SNAPEG_H_#include <stdint.h>
+#define SNAPEG_H_
+#include <stdint.h>
 typedef struct Snap_EG_Struct
 {
 	float value;
