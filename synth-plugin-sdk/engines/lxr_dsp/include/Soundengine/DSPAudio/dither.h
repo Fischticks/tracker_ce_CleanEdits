@@ -33,7 +33,8 @@ input data is in the range +1 to -1 and doesn't check for overloads!
 
 To save time when generating dither for multiple channels you can do
 things like this:  r3=(r1 & 0x7F)<<8; instead of calling rand() again.
-*/#include <stdint.h>
+*/
+#include <stdint.h>
 #include "Soundengine/DSPAudio/random.h"
 
 #define BITS 16
