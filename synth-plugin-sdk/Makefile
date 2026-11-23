@@ -75,10 +75,21 @@ $(BUILD_DIR)/CHIP.psyn: $(BUILD_DIR)/CHIP.elf $(SDK_DIR)/tools/psyn_builder.py
 		--supports-idle-sleep $(SUPPORTS_IDLE_SLEEP) \
 		--has-voice-tick-idle $(HAS_VOICE_TICK_IDLE)
 
+HOST_CC       ?= gcc
+HOST_CFLAGS   := -std=gnu11 -O2 -Wall -Wextra -I$(LXR_DSP_DIR)/include
+HOST_TEST_BIN := $(BUILD_DIR)/host/lxr_drumvoice_smoke
+
+host-test: $(HOST_TEST_BIN)
+	$(HOST_TEST_BIN)
+
+$(HOST_TEST_BIN): $(SDK_DIR)/tests/lxr_drumvoice_smoke.c $(LXR_DSP_SRCS)
+	@mkdir -p $(dir $@)
+	$(HOST_CC) $(HOST_CFLAGS) $^ -lm -o $@
+
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all clean
+.PHONY: all clean host-test
 
 $(BUILD_DIR)/lxr_dsp/%.o: $(LXR_DSP_DIR)/src/%.c
 	@mkdir -p $(dir $@)
