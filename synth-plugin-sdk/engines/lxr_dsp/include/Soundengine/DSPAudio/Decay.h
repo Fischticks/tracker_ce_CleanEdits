@@ -13,7 +13,8 @@
 
 
 #ifndef DECAY_H_
-#define DECAY_H_#include <stdint.h>
+#define DECAY_H_
+#include <stdint.h>
 typedef struct Decay_EG_Struct
 {
 	float decay;
