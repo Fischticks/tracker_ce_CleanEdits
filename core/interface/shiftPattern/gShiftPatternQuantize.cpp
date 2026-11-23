@@ -14,16 +14,26 @@
 
 namespace
 {
-const char* const onOffNames[2] = { "Off", "On" };
+const char* const onOffNames[2] = { "On", "Off" };
 
-// Same order as quantizeGrid::Division (coarsest to finest).
-const char* const divisionNames[quantizeGrid::divisionCount] = { "1/4D", "1/4",   "1/8D", "1/4T",
-                                                                 "1/8",  "1/16D", "1/8T", "1/16" };
+// Display order is the reverse of quantizeGrid::Division: finest to coarsest.
+const char* const divisionNames[quantizeGrid::divisionCount] = { "1/16", "1/8T", "1/16D", "1/8",
+                                                                 "1/4T", "1/8D", "1/4", "1/4D" };
+
+uint8_t toggleDisplayIndex(bool enabled)
+{
+    return enabled ? 0 : 1;
+}
+
+uint8_t divisionDisplayIndex(uint8_t division)
+{
+    return quantizeGrid::divisionCount - 1 - division;
+}
 
 // Bottom-row names. The full control names (Step Quantize, Quantize Division, Quarter Note Length) do not fit
 // the 100 px column, so they are shortened here.
 const char* const columnNames[8] = { "Category", "Note Off", "Quantize",  "Step Quant",
-                                     "Division", "Strength", "Quarter Len", "Bypass" };
+                                     "Division", "Strength", "Qtr.N Len", "Bypass" };
 
 constexpr uint8_t kToggleNoteOff = 0;
 constexpr uint8_t kToggleQuantize = 1;
@@ -87,7 +97,7 @@ void cShiftPattern::initQuantizeControls()
     }
 
     qDivisionList.linesCount = quantizeGrid::divisionCount;
-    qDivisionList.start = quantizeGrid::kDefaultDivision;
+    qDivisionList.start = divisionDisplayIndex(quantizeGrid::kDefaultDivision);
     qDivisionList.length = quantizeGrid::divisionCount;
     qDivisionList.data = (char**)divisionNames;
     prop.x = columnX(kQDivision);
@@ -142,7 +152,7 @@ void cShiftPattern::refreshQuantizeValues()
     {
         const uint8_t col = toggleColumn(i);
         const bool active = isQuantizeColumnEditable(col);
-        qToggleList[i].start = toggleValue(i) ? 1 : 0;
+        qToggleList[i].start = toggleDisplayIndex(toggleValue(i));
         display.setControlData(qToggle[i], &qToggleList[i]);
         display.setControlColors(qToggle[i], active ? theme.activeListColors : theme.inactiveListColors);
         display.setControlValue(qToggle[i], qToggleList[i].start);
@@ -152,10 +162,10 @@ void cShiftPattern::refreshQuantizeValues()
 
     {
         const bool active = isQuantizeColumnEditable(kQDivision);
-        qDivisionList.start = v.division;
+        qDivisionList.start = divisionDisplayIndex(v.division);
         display.setControlData(qDivision, &qDivisionList);
         display.setControlColors(qDivision, active ? theme.activeListColors : theme.inactiveListColors);
-        display.setControlValue(qDivision, v.division);
+        display.setControlValue(qDivision, divisionDisplayIndex(v.division));
         display.setControlShow(qDivision);
         display.refreshControl(qDivision);
     }
@@ -174,13 +184,13 @@ void cShiftPattern::refreshQuantizeValues()
 
     // bottom labels: name + stored value; dimmed like an empty column when Bypass disables the control
     const char* values[8] = { nullptr,
-                              onOffNames[v.noteOff],
-                              onOffNames[v.quantize],
-                              onOffNames[v.stepQuantize],
-                              divisionNames[v.division],
+                              onOffNames[toggleDisplayIndex(v.noteOff)],
+                              onOffNames[toggleDisplayIndex(v.quantize)],
+                              onOffNames[toggleDisplayIndex(v.stepQuantize)],
+                              divisionNames[divisionDisplayIndex(v.division)],
                               qStrengthText,
                               qQuarterText,
-                              onOffNames[v.bypass] };
+                              onOffNames[toggleDisplayIndex(v.bypass)] };
     for (uint8_t col = kQNoteOff; col <= kQBypass; col++)
     {
         display.setControlText(label[col], columnNames[col]);
@@ -211,13 +221,13 @@ void cShiftPattern::changeQuantizeValue(int16_t value)
     quantizeSettings::Values& v = quantizeSettings::values;
     switch (selectedPlace)
     {
-        case kQNoteOff: v.noteOff = value > 0; break;
-        case kQQuantize: v.quantize = value > 0; break;
-        case kQStepQuantize: v.stepQuantize = value > 0; break;
-        case kQBypass: v.bypass = value > 0; break;
+        case kQNoteOff: if (value != 0) v.noteOff = value < 0; break;
+        case kQQuantize: if (value != 0) v.quantize = value < 0; break;
+        case kQStepQuantize: if (value != 0) v.stepQuantize = value < 0; break;
+        case kQBypass: if (value != 0) v.bypass = value < 0; break;
         case kQDivision:
         {
-            const int next = clamp<int>((int)v.division + value, 0, quantizeGrid::divisionCount - 1);
+            const int next = clamp<int>((int)v.division - value, 0, quantizeGrid::divisionCount - 1);
             v.division = (uint8_t)next;
             break;
         }
@@ -232,6 +242,32 @@ void cShiftPattern::changeQuantizeValue(int16_t value)
                                             quantizeGrid::kQuarterMax);
             break;
         }
+        default: return;
+    }
+
+    refreshQuantizeValues();
+}
+
+void cShiftPattern::cycleQuantizeValue()
+{
+    if (!isQuantizeColumnEditable(selectedPlace))
+    {
+        return;
+    }
+
+    quantizeSettings::Values& v = quantizeSettings::values;
+    switch (selectedPlace)
+    {
+        case kQNoteOff: v.noteOff = !v.noteOff; break;
+        case kQQuantize: v.quantize = !v.quantize; break;
+        case kQStepQuantize: v.stepQuantize = !v.stepQuantize; break;
+        case kQBypass: v.bypass = !v.bypass; break;
+        case kQDivision:
+            v.division = (v.division == 0) ? quantizeGrid::divisionCount - 1 : v.division - 1;
+            break;
+        case kQQuarter:
+            v.quarter = (v.quarter >= quantizeGrid::kQuarterMax) ? quantizeGrid::kQuarterMin : v.quarter + 1;
+            break;
         default: return;
     }
 

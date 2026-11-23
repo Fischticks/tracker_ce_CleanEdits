@@ -48,6 +48,7 @@ class cShiftPattern : public ModuleBase
 
     void changeCategory(int16_t value, bool rollOver);
     void changeSelectedValue(int16_t value);
+    void resetSelectedValue(uint8_t column);
     void moveSelection(int8_t direction);
     void selectColumn(uint8_t column);
     bool isColumnSelectable(uint8_t column) const;
@@ -77,6 +78,7 @@ class cShiftPattern : public ModuleBase
     void hideQuantizeControls();
     void refreshQuantizeValues();
     void changeQuantizeValue(int16_t value);
+    void cycleQuantizeValue();
     bool isQuantizeColumnEditable(uint8_t column) const; // false for the controls dimmed by Bypass
 
     hControl qToggle[4]; // Note Off, Quantize, Step Quantize, Bypass
