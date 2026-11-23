@@ -594,6 +594,8 @@ void playerEngine::changePositionLfoRatePerformanceMode(int8_t value)
 
     if (mtProject.instrument[currentInstrument_idx].playMode == playModeGranular)
     {
+        trackControlParameter[(int)controlType::performanceMode]
+                             [(int)parameterList::lfoWavetablePosition] = 0;
         if ((trackControlParameter[(int)controlType::performanceMode]
                                   [(int)parameterList::lfoGranularPosition] != 1) &&
             (value == 0))
@@ -637,6 +639,8 @@ void playerEngine::changePositionLfoRatePerformanceMode(int8_t value)
 
     else if (mtProject.instrument[currentInstrument_idx].playMode == playModeWavetable)
     {
+        trackControlParameter[(int)controlType::performanceMode]
+                             [(int)parameterList::lfoGranularPosition] = 0;
         if ((trackControlParameter[(int)controlType::performanceMode]
                                   [(int)parameterList::lfoWavetablePosition] != 1) &&
             (value == 0))
@@ -676,6 +680,13 @@ void playerEngine::changePositionLfoRatePerformanceMode(int8_t value)
 
         trackControlParameter[(int)controlType::performanceMode]
                              [(int)parameterList::lfoWavetablePosition] = 1;
+    }
+    else
+    {
+        trackControlParameter[(int)controlType::performanceMode]
+                             [(int)parameterList::lfoGranularPosition] = 0;
+        trackControlParameter[(int)controlType::performanceMode]
+                             [(int)parameterList::lfoWavetablePosition] = 0;
     }
 }
 void playerEngine::changePanningLfoRatePerformanceMode(int8_t value)
@@ -1226,8 +1237,8 @@ void playerEngine::endPositionLfoRatePerformanceMode()
         trackControlParameter[(int)controlType::performanceMode]
                              [(int)parameterList::lfoGranularPosition] = 0;
     }
-    else if (trackControlParameter[(int)controlType::performanceMode]
-                                  [(int)parameterList::lfoWavetablePosition])
+    if (trackControlParameter[(int)controlType::performanceMode]
+                             [(int)parameterList::lfoWavetablePosition])
     {
         uint8_t curWtLoop = mtProject.instrument[currentInstrument_idx].envelope[envWtPos].loop;
         if (trackControlParameter[(int)controlType::sequencerMode]

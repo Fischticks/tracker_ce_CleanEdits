@@ -143,6 +143,7 @@ class audioEngine
     void clearReverb();
     void resetLimiter();
     void performanceModeEndAll();
+    void performanceModeEndPositionLfoRateAll();
     void startTestSignal(float amp, float freq);
     void stopTestSignal();
     void endAllFx(bool synthOnly = false);

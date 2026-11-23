@@ -45,6 +45,14 @@ void TitleBar::initControls()
     prop.colors = display.getTheme().topBarLabelColors;
     prop.style = (controlStyleRightX | controlStyleCenterY | controlStyleFont4);
     rightLabel = display.createControl<cLabel>(&prop);
+    prop.x = 675;
+    prop.y = 13;
+    prop.w = 85;
+    prop.colors = display.getTheme().topBarLabelColors;
+    prop.style = (controlStyleRightX | controlStyleCenterY | controlStyleFont4);
+    prop.text = (char*)"FX LATCH";
+    fxLatchLabel = display.createControl<cLabel>(&prop);
+    display.setControlHide(fxLatchLabel);
 
 #ifdef BATTERY_ENABLED
     prop.style = controlStyleShowBitmap | controlStyleCenterY;
@@ -87,6 +95,7 @@ void TitleBar::refreshColors()
 {
     display.setControlColors(titleLabel, display.getTheme().topBarLabelColors);
     display.setControlColors(rightLabel, display.getTheme().topBarLabelColors);
+    display.setControlColors(fxLatchLabel, display.getTheme().topBarLabelColors);
 #ifdef BATTERY_ENABLED
     display.setControlColors(battery, display.getTheme().batteryIconColors);
 #endif
@@ -99,6 +108,13 @@ void TitleBar::show(bool showRightLabel)
 {
     display.setControlShow(titleLabel);
     display.refreshControl(titleLabel);
+    if (fxLatchEnabled)
+    {
+        display.setControlShow(fxLatchLabel);
+        display.refreshControl(fxLatchLabel);
+    }
+    else
+        display.setControlHide(fxLatchLabel);
 
     if (showRightLabel)
     {
@@ -125,6 +141,27 @@ void TitleBar::setTitle(const char* text)
 {
     display.setControlText(titleLabel, text);
     display.refreshControl(titleLabel);
+}
+
+void TitleBar::setFxLatchEnabled(bool enabled)
+{
+    fxLatchEnabled = enabled;
+    if (fxLatchLabel < 0)
+        return;
+    if (enabled)
+    {
+        display.setControlText(fxLatchLabel, "FX LATCH");
+        if (visible)
+        {
+            display.setControlShow(fxLatchLabel);
+            display.refreshControl(fxLatchLabel);
+        }
+    }
+    else
+    {
+        display.setControlHide(fxLatchLabel);
+        display.refreshControl(fxLatchLabel);
+    }
 }
 
 void TitleBar::setRightLabel(const char* text)
@@ -230,6 +267,7 @@ void TitleBar::showBattery(bool show)
 void TitleBar::hide()
 {
     display.setControlHide(titleLabel);
+    display.setControlHide(fxLatchLabel);
     // display.refreshControl(titleLabel);
 
     display.setControlHide(rightLabel);
