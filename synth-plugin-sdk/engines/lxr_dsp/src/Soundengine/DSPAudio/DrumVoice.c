@@ -79,7 +79,7 @@ void lxr_drum_voice_init(DrumVoice* voice, uint8_t voiceIndex)
 #endif
 
 #if ENABLE_MIX_OSC
-		(*voice).mixOscs = true;
+		(*voice).mixOscs = 1;
 #endif
 		(*voice).decimationCnt = 0;
 		(*voice).decimationRate = 1;
