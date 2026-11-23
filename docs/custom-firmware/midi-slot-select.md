@@ -1,6 +1,6 @@
 # MIDI Slot Select — `MOD_MIDI_SLOT_SELECT`
 
-**Status:** Implemented on `feature/midi-slot-select`; pull-request build verification pending.  
+**Status:** Implemented on `feature/midi-slot-select`; PR #11 default-feature firmware CI passed. Feature-disabled full target builds and hardware validation remain outstanding.  
 **Default build:** Enabled. The runtime setting defaults Off.  
 **Dependencies:** None.
 
@@ -78,7 +78,9 @@ g++ -std=c++17 -Wall -Wextra -Icore/source tests/host/test_midiSlotSelectMapping
 /tmp/test_midiSlotSelectMapping
 ```
 
-The pull-request workflow is expected to build Original Tracker, Tracker+, and Tracker Mini with the default feature set. Hardware behavior has not been validated.
+The pull-request workflow passed Original Tracker, Tracker+, and Tracker Mini builds with the default feature set, plus reference Sample Editor plugin build and Synth plugin packaging. The feature-disabled full target build has not been run; the module's feature-off host-stub syntax check passed. The host mapping test passed with 171 checks and 0 failures. Hardware behavior has not been validated.
+
+**Target-specific configuration note:** the 20-byte MIDI structure assertion is specific to the current `Fischticks/tracker_ce_CleanEdits` baseline. Current public `polyend/tracker-ce` main has two additional MIDI Program Change settings in this structure; re-audit the structure size and extension offsets before porting or rebasing this change.
 
 ## Source files
 
