@@ -113,7 +113,7 @@ class LxrDrumPocVoice final : public InstrumentVoice
             voice.oscVolEg.value > kActivityThreshold;
         const bool transientActive =
             voice.transGen.waveform >= 2 && voice.transGen.phase < kTransientEndPhase;
-        return envelopeActive || transientActive;
+        return held || envelopeActive || transientActive;
     }
 
     bool handlesNote(note_t note) final { return held && note == heldNote; }
