@@ -154,6 +154,7 @@ void TitleBar::setFxLatchEnabled(bool enabled)
     // The right-anchored instrument label shares the title bar row. Narrow it
     // while the latch marker is visible so the two controls never overlap.
     display.setControlSize(rightLabel, enabled ? 180 : 270, 0);
+    display.refreshControl(rightLabel);
     if (enabled)
     {
         display.setControlText(fxLatchLabel, "FX LATCH");
