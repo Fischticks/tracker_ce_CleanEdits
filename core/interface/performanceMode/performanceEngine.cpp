@@ -69,22 +69,18 @@ cPerformFx::cPerformFx(uint8_t fxId,
     performance.fxList[id] = this;
 }
 
-bool cPerformEngine::turnOff()
+bool cPerformEngine::turnOff(bool preserveFx)
 {
     bool wasPerformanceMode = sequencer.isPerformanceMode();
     if (wasPerformanceMode)
-    {
         sequencer.exitPerformanceMode();
-        engine.performanceModeEndAll();
-    }
-
-    for (uint8_t track = 0; track < kPerformanceTracks; track++)
+    if (!preserveFx)
     {
-        tracksPerformanceState[track] = 0;
+        engine.performanceModeEndAll();
+        for (uint8_t track = 0; track < kPerformanceTracks; track++)
+            tracksPerformanceState[track] = 0;
+        resetAllFx();
     }
-
-    resetAllFx();
-
     return wasPerformanceMode;
 }
 

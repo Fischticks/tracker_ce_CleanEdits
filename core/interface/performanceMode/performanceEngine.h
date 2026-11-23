@@ -39,7 +39,7 @@ class cPerformEngine
 
     ~cPerformEngine() {}
 
-    bool turnOff();
+    bool turnOff(bool preserveFx = false);
 
     void forceSaveConfig();
 
