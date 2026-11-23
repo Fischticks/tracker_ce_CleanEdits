@@ -64,6 +64,14 @@ int main()
     CHECK(midiSlotSelectMapRawNote(127, midiSlotSelectModeWhiteKeysOnly, 36, 10, 64) == 4);
     CHECK(midiSlotSelectMapRawNote(119, midiSlotSelectModeWhiteKeysOnly, 36, 10, 64) == -1);
 
+    // White-key mapping also respects the 64-slot and 67-slot build limits.
+    CHECK(midiSlotSelectMapRawNote(108, midiSlotSelectModeWhiteKeysOnly, 36, 0, 64) == 63);
+    CHECK(midiSlotSelectMapRawNote(110, midiSlotSelectModeWhiteKeysOnly, 36, 0, 64) == -1);
+    CHECK(midiSlotSelectMapRawNote(110, midiSlotSelectModeWhiteKeysOnly, 36, 0, 67) == 64);
+    CHECK(midiSlotSelectMapRawNote(112, midiSlotSelectModeWhiteKeysOnly, 36, 0, 67) == 65);
+    CHECK(midiSlotSelectMapRawNote(113, midiSlotSelectModeWhiteKeysOnly, 36, 0, 67) == 66);
+    CHECK(midiSlotSelectMapRawNote(113, midiSlotSelectModeWhiteKeysOnly, 36, 0, 64) == -1);
+
     // Invalid inputs and unavailable instrument slots are rejected.
     CHECK(midiSlotSelectMapRawNote(128, midiSlotSelectModeDrum, 36, 3, 64) == -1);
     CHECK(midiSlotSelectMapRawNote(36, midiSlotSelectModeCount, 36, 3, 64) == -1);
