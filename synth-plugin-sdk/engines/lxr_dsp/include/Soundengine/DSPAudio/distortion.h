@@ -14,7 +14,8 @@
 
 #ifndef DISTORTION_H_
 #define DISTORTION_H_
-//--------------------------------------------------#include <stdint.h>
+//--------------------------------------------------
+#include <stdint.h>
 #include "Soundengine/config.h"
 #include "Soundengine/DSPAudio/1PoleLp.h"
 //--------------------------------------------------
