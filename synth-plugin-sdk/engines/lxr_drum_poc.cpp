@@ -1,9 +1,11 @@
 /*
- * LXR-derived Tracker drum proof of concept.
+ * LXR-02-inspired Tracker drum proof of concept.
  *
- * Copyright (C) 2012-2026 Erica Synths (upstream LXR DSP source and design).
- * This file is an independent Tracker-facing POC adaptation and is not an
- * official Erica Synths product or an endorsed LXR-02 implementation.
+ * This Tracker-facing prototype is informed by the audited LXR-02 DrumVoice
+ * architecture at Erica Synths lxr-desktop-app revision
+ * dca0a44413931a12de65941355f06c07598a9be5. It is an initial independent
+ * approximation, not a source-faithful port and not an official Erica Synths
+ * product or endorsed implementation.
  *
  * SPDX-License-Identifier: GPL-3.0-only
  * See ../LICENSE-LXR-GPL-3.0.txt and ../NOTICE-LXR.md for applicable terms.
