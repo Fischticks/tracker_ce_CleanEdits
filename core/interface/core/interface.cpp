@@ -135,6 +135,7 @@ void Interface::begin(Platform* platform, Synth* synth)
 void Interface::update()
 {
     processOperatingMode();
+    performanceMode.updateLatchedFxCC();
 
     if (onScreenModule != nullptr && onScreenModule->moduleRefresh)
         onScreenModule->update();

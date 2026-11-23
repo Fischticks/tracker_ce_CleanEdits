@@ -18,6 +18,7 @@
 #include "core/songTimer.h"
 
 #include "patternEditor/patternEditor.h"
+#include "performanceMode/performanceMode.h"
 
 #include "core/interfacePopups.h"
 
@@ -1593,7 +1594,6 @@ void Sequencer::stop(void)
 void Sequencer::stop(StopContext context)
 {
     LOG("sequencer stop");
-
     songTimer.stop();
     stopAllOpenNotes();
     cancelFxes();
@@ -1602,78 +1602,63 @@ void Sequencer::stop(StopContext context)
     player.isStop = 1;
     player.isREC = 0;
     player.startRecOnExtClk = 0;
-
     player.uStep = 0;
     player.selectionMode = false;
     player.selectionModeLooped = false;
-
     player.swing.resetSwing();
-
     player.preRecMetronomeActive = 0;
-
     player.breakPattern = 0;
-
     timerTicks = 0;
     internalTickClock.reset();
 
     if (player.onPatternOrSelectionEnd == cbkTurnOffPerformanceMode)
-    {
         player.onPatternOrSelectionEnd();
-        if (sequencialSwitch_GetNext() > 0)
-        {
-            if (context == StopContext::audioCallback)
-            {
-                player.reloadPatternAfterStop = true;
-            }
-            else
-            {
-                newFileManager.loadWorkspacePatternNow(mtProject.values.actualPattern);
-                sequencer.switchRamPatternsNow();
-            }
-        }
+
+    if (player.restoreWorkspacePatternAfterPerformanceExit)
+    {
+        if (context == StopContext::audioCallback)
+            player.reloadPatternAfterStop = true;
+        else
+            restoreWorkspacePatternAfterPerformanceExit();
     }
+
     player.onGlobalStep = nullCallback;
-
     sequencialSwitch_Reset();
-
     for (int a = 0; a < kAllTracks; a++)
     {
         player.track[a].uStep = 0;
-
         player.track[a].roll.isOn = 0;
         player.track[a].isActive = 1;
-
         player.track[a].stepSent.note = STEP_NOTE_EMPTY;
     }
-
     reset_actual_pos();
     resetChanceState();
-
     player.tempoFx.reset();
-
     sendMidiStop();
-
     patternEditor.refreshEditStateFromOutsideModule();
-
     for (int trackIdx = 0; trackIdx < kAllTracks; trackIdx++)
-    {
         player.track[trackIdx].stepSent.note = STEP_NOTE_EMPTY;
-    }
+}
+
+void Sequencer::restoreWorkspacePatternAfterPerformanceExit()
+{
+    if (!player.restoreWorkspacePatternAfterPerformanceExit || isPlay())
+        return;
+    player.reloadPatternAfterStop = false;
+    newFileManager.loadWorkspacePatternNow(mtProject.values.actualPattern);
+    DISABLE_GLOBAL_INTERRUPTS();
+    switchRamPatternsNow();
+    ENABLE_GLOBAL_INTERRUPTS();
 }
 
 void Sequencer::reloadPatternAfterStop()
 {
-    if (!player.reloadPatternAfterStop)
-    {
+    if (!player.reloadPatternAfterStop &&
+        !player.restoreWorkspacePatternAfterPerformanceExit)
         return;
-    }
-    player.reloadPatternAfterStop = false;
-
-    newFileManager.loadWorkspacePatternNow(mtProject.values.actualPattern);
-    // Playback may have been started again since the stop.
-    DISABLE_GLOBAL_INTERRUPTS();
-    switchRamPatternsNow();
-    ENABLE_GLOBAL_INTERRUPTS();
+    if (isPlay())
+        return;
+    restoreWorkspacePatternAfterPerformanceExit();
 }
 
 void Sequencer::updatePatternManagment()
@@ -3411,16 +3396,49 @@ AUDIO_CORE_RAM void Sequencer::killFxOnSlot(uint8_t row, uint8_t slot)
 void Sequencer::enterPerformanceMode()
 {
     player.performanceMode = 1;
-
+    player.performanceExitBoundaryPending = false;
+    player.performanceExitBoundarySwapCompleted = false;
     for (uint8_t a = 0; a < kAllTracks; a++)
-    {
         player.performance.trackLength[a] = getActualPattern()->track[0].length;
-    }
-
     if (player.onPatternOrSelectionEnd == cbkTurnOffPerformanceMode)
-    {
         player.onPatternOrSelectionEnd = nullCallback;
+}
+
+void Sequencer::schedulePerformanceModeExit()
+{
+    player.performanceExitBoundaryPending = true;
+    player.performanceExitBoundarySwapCompleted = false;
+}
+
+void Sequencer::exitPerformanceMode()
+{
+    const bool restoredAtBoundary = player.performanceExitBoundarySwapCompleted;
+    player.performanceMode = 0;
+    player.performance.patternLength = -1;
+    player.performanceExitBoundaryPending = false;
+    player.performanceExitBoundarySwapCompleted = false;
+    for (uint8_t track = 0; track < kPerformanceTracks; track++)
+    {
+        player.track[track].performanceSourcePattern = -1;
+        mtProject.perfTracksPatterns[track] = mtProject.values.actualPattern;
     }
+    if (!restoredAtBoundary)
+        player.restoreWorkspacePatternAfterPerformanceExit = true;
+}
+
+void Sequencer::discardPerformanceModeForProjectReplacement()
+{
+    player.performanceMode = 0;
+    player.performance.patternLength = -1;
+    player.performanceExitBoundaryPending = false;
+    player.performanceExitBoundarySwapCompleted = false;
+    player.restoreWorkspacePatternAfterPerformanceExit = false;
+    player.reloadPatternAfterStop = false;
+    sequencialSwitch_Reset();
+    if (player.onPatternOrSelectionEnd == cbkTurnOffPerformanceMode)
+        player.onPatternOrSelectionEnd = nullCallback;
+    for (uint8_t track = 0; track < kPerformanceTracks; track++)
+        player.track[track].performanceSourcePattern = -1;
 }
 
 void Sequencer::setPerformanceMidiTune(uint8_t tr, int8_t value)
@@ -3589,6 +3607,12 @@ void Sequencer::switchRamPatternsNow()
     cancelFxes();
     std::swap(currentPattern, bufferPattern);
 
+    if (player.performanceExitBoundaryPending)
+    {
+        player.performanceExitBoundaryPending = false;
+        player.performanceExitBoundarySwapCompleted = true;
+    }
+    player.restoreWorkspacePatternAfterPerformanceExit = false;
     int bufferPatternIdx = newFileManager.getLoadedPatternIndex();
     assert(bufferPatternIdx >= 0);
     // The buffer pattern now holds what was playing.
