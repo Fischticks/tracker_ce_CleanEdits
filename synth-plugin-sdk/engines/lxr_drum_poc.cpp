@@ -36,8 +36,6 @@ class LxrDrumPocVoice final : public InstrumentVoice
     {
         metadata.params.clear();
         metadata.outputChannels = Patch::Metadata::OutputChannels::kMono;
-        metadata.maxVoices = 1;
-        metadata.supportsIdleSleep = false;
     }
 
     void onMidiEvent(const InstrumentVoiceContext& /*ctx*/, const MidiEvent& event) final
@@ -128,7 +126,7 @@ class LxrDrumPocVoice final : public InstrumentVoice
 
     tiny_optional<float> getCurrentNoteVelocity() final
     {
-        return currentVelocityValid ? tiny_optional<float>(currentVelocity) : tiny_optional<float>{};
+        return (currentVelocityValid && isActive()) ? tiny_optional<float>(currentVelocity) : tiny_optional<float>{};
     }
 
     void reset() final
