@@ -13,7 +13,7 @@
 
 
 #ifndef BUFFERTOOLS_H_
-#define BUFFERTOOLS_H_#include "dither.h"
+#define BUFFERTOOLS_H_#include "Soundengine/DSPAudio/dither.h"
 #include "Soundengine/config.h"
 #include "Soundengine/lxr_compat.h"
 #include <string.h>
@@ -84,6 +84,8 @@ static inline void bufferTool_addGainDithered(Dither* dither, int16_t* buf, cons
 //---------------------------------------------------
 static inline void bufferTool_addGainInterpolated(int16_t* buf, const float gain, const float lastGain, const uint8_t size)
 {
+	if (size == 0) return;
+	if (size == 1) { buf[0] = (int16_t)(buf[0] * gain); return; }
 
 
 #if 0
