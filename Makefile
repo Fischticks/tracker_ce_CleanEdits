@@ -34,6 +34,7 @@ MINI_POSTFIX     ?= $(EDITION_NAME)_$(MINI_VER_MAJOR).$(MINI_VER_MINOR).$(MINI_V
 all: original plus mini psyn
 
 psyn:
+	$(MAKE) -C "$(ROOT_DIR)/synth-plugin-sdk" host-test HOST_CC=gcc
 	$(MAKE) -C "$(ROOT_DIR)/synth-plugin-sdk" all TOOLCHAIN="$(TOOLCHAIN)"
 	@mkdir -p "$(OUT_DIR)/Synths"
 	@cp "$(SYNTH_DIR)"/prebuilt/*.psyn "$(OUT_DIR)/Synths/"
