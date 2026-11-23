@@ -159,6 +159,9 @@ void cPerformanceMode::start(uint32_t options)
 
 void cPerformanceMode::stop()
 {
+    // Position LFO is screen-scoped even when sequencer Performance Mode continues.
+    engine.performanceModeEndPositionLfoRateAll();
+
     if (!dontClearPerformanceMode)
     {
         turnOff();
