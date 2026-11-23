@@ -251,6 +251,11 @@ bool cPerformanceMode::turnOff(bool fromAudioCallback)
         isCCToReceiveForTrack[track] = false;
         currentCCValueForTrack[track] = 0;
     }
+    if (!preserveFx)
+    {
+        for (uint8_t slot = 0; slot < 12; slot++)
+            isCCToReceiveForSlot[slot] = false;
+    }
     refreshTrackPattern = 1;
     refreshTrackState = 1;
     dontClearPerformanceMode = 0;
