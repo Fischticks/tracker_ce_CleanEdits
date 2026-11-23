@@ -3,6 +3,7 @@
 #include "fileManager.h"
 #include "fileManagerDefs.h"
 #include "fileTransfer.h"
+#include "performanceMode/performanceMode.h"
 
 #if FILEMANAGER_HANDLE_SYNTH == 1
 #include "Synth.h"
@@ -154,6 +155,7 @@ void WorkspaceProjectLoad::loadProjectFromWorkspaceInit()
 
 void WorkspaceProjectLoad::loadProjectFromWorkspaceFinish()
 {
+    performanceMode.resetForProjectReplacement();
     if (newFileManager.getCurrentProjectName()[0] == 0)
     {
         // jezeli projekt jest otwierany bezposrednio z workspace np. na start urzadzenia to

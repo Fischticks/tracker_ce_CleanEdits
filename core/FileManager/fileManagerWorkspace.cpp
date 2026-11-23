@@ -2,6 +2,7 @@
 #include "mtStructs.h"
 
 #include "mtSequencer.h"
+#include "performanceMode/performanceMode.h"
 
 #include "fileManager.h"
 
@@ -9,6 +10,7 @@
 
 bool cFileManager::createNewProjectInWorkspace()
 {
+    performanceMode.resetForProjectReplacement();
     addCurrentProjectToRecentList();
 
     clearWorkspace();

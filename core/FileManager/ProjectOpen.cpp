@@ -3,6 +3,7 @@
 #include "fileManager.h"
 #include "fileManagerDefs.h"
 #include "fileTransfer.h"
+#include "performanceMode/performanceMode.h"
 
 #if FILEMANAGER_HANDLE_SYNTH == 1
 #include "Synth.h"
@@ -138,6 +139,7 @@ void ProjectOpen::openProjectInit()
     sampleMemoryCopied = 0;
     copyStep = 0;
 
+    performanceMode.resetForProjectReplacement();
     newFileManager.stopAudioEngine();
 
     listProjectNewInstruments();

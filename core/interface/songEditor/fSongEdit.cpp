@@ -342,11 +342,7 @@ void playSongFromSelectedPattern_stop()
     SE->lastSongListPos = -1;
     sequencer.stop();
     SE->hideIcon();
-    if (performanceMode.turnOff())
-    {
-        newFileManager.loadWorkspacePatternNow(mtProject.values.actualPattern);
-        sequencer.switchRamPatternsNow();
-    }
+    performanceMode.turnOff();
 }
 
 static void functPlaySong()
