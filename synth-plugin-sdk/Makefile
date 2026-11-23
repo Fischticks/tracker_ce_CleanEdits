@@ -20,9 +20,9 @@ LXR_DSP_DIR   := $(SDK_DIR)/engines/lxr_dsp
 LXR_DSP_SRCS  := $(wildcard $(LXR_DSP_DIR)/src/Soundengine/DSPAudio/*.c)
 LXR_DSP_OBJS  := $(patsubst $(LXR_DSP_DIR)/src/%.c,$(BUILD_DIR)/lxr_dsp/%.o,$(LXR_DSP_SRCS))
 
-LXR_CFLAGS    := -std=gnu11 -O3 -DNDEBUG -Wall -Wextra -fno-common \\
-                 -ffunction-sections -fdata-sections -fno-builtin \\
-                 -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 \\
+LXR_CFLAGS    := -std=gnu11 -O3 -DNDEBUG -Wall -Wextra -fno-common \
+                 -ffunction-sections -fdata-sections -fno-builtin \
+                 -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 \
                  -I$(LXR_DSP_DIR)/include
 
 CXXFLAGS      := -std=c++20 -includecstdint -felide-constructors -Wno-psabi \
