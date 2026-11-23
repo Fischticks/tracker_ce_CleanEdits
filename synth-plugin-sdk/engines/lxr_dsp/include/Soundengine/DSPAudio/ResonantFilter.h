@@ -24,7 +24,8 @@
 //----------------------------------------------------
 
 #include "Soundengine/config.h"
-#include "Soundengine/lxr_compat.h"#include <stdint.h>
+#include "Soundengine/lxr_compat.h"
+#include <stdint.h>
 #include "Soundengine/datatypes.h"
 #include "math.h"
 #include "Soundengine/DSPAudio/distortion.h"
