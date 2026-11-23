@@ -13,7 +13,8 @@
 
 
 #ifndef SLOPEEG2_H_
-#define SLOPEEG2_H_#include <stdint.h>
+#define SLOPEEG2_H_
+#include <stdint.h>
 #define EG_STOPPED 	0
 #define EG_A		1
 #define EG_D		2
