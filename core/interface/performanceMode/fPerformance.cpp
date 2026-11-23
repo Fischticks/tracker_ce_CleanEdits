@@ -383,9 +383,8 @@ void cPerformanceMode::refreshAllCC()
 
 void cPerformanceMode::updateLatchedFxCC()
 {
-    if (!fxLatchEnabled || mtInterface.isPerformanceModeScreenActive() || midiRefreshTime < 50)
+    if (!fxLatchEnabled || mtInterface.isPerformanceModeScreenActive())
         return;
-    midiRefreshTime = 0;
     refreshFxCC(false);
 }
 

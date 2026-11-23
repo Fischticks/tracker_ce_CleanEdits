@@ -769,7 +769,7 @@ AUDIO_CORE_RAM void audioEngine::endAllFx(bool synthOnly)
 
 void audioEngine::performanceModeEndPositionLfoRateAll()
 {
-    for (uint8_t i = 0; i < kVoices; i++)
+    for (uint8_t i = 0; i < 8; i++)
         instrumentPlayer[i].endPositionLfoRatePerformanceMode();
 }
 
