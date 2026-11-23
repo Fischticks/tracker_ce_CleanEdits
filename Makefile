@@ -38,6 +38,8 @@ psyn:
 	@mkdir -p "$(OUT_DIR)/Synths"
 	@cp "$(SYNTH_DIR)"/prebuilt/*.psyn "$(OUT_DIR)/Synths/"
 	@cp "$(ROOT_DIR)"/synth-plugin-sdk/build/*.psyn "$(OUT_DIR)/Synths/"
+	@cp "$(ROOT_DIR)/synth-plugin-sdk/LICENSE-LXR-GPL-3.0.txt" "$(OUT_DIR)/Synths/"
+	@cp "$(ROOT_DIR)/synth-plugin-sdk/NOTICE-LXR.md" "$(OUT_DIR)/Synths/"
 
 original:
 	@echo "=================================================================="
