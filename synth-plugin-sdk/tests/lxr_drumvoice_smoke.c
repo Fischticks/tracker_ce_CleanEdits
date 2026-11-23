@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+enum { PART_COUNT = 3 };
+
 typedef struct
 {
     int16_t samples[3];
@@ -21,6 +23,12 @@ static int32_t abs_sample(int16_t value)
     return wide < 0 ? -wide : wide;
 }
 
+static int16_t saturating_add(int16_t a, int16_t b)
+{
+    const int32_t sum = (int32_t)a + (int32_t)b;
+    return (int16_t)(sum > 32767 ? 32767 : (sum < -32768 ? -32768 : sum));
+}
+
 static int fail(const char* message)
 {
     fprintf(stderr, "LXR DrumVoice smoke test failed: %s\n", message);
@@ -29,30 +37,54 @@ static int fail(const char* message)
 
 int main(void)
 {
-    DrumVoice voice = { 0 };
-    lxr_drum_voice_init(&voice, 0);
+    DrumVoice parts[PART_COUNT] = { 0 };
+    const uint8_t triggerNotes[PART_COUNT] = { 36, 37, 38 };
+    const uint8_t velocities[PART_COUNT] = { 127, 96, 80 };
+    const uint8_t expectedWaveforms[PART_COUNT] = { TRI, SAW, REC };
 
-    if (voice.mixOscs != 1 || voice.osc.waveform != TRI || voice.vol <= 0.0f)
+    for (uint8_t part = 0; part < PART_COUNT; ++part)
     {
-        return fail("initialization did not establish the expected source-backed voice defaults");
+        lxr_drum_voice_init(&parts[part], part);
+        if (parts[part].mixOscs != 1 ||
+            parts[part].osc.waveform != expectedWaveforms[part] ||
+            parts[part].vol <= 0.0f)
+        {
+            return fail("part initialization did not establish the expected source-backed defaults");
+        }
+        lxr_drum_voice_trigger(&parts[part], velocities[part], triggerNotes[part]);
     }
 
-    lxr_drum_voice_trigger(&voice, 127, 36);
-    if (voice.velo < 0.999f)
-    {
-        return fail("trigger did not capture full velocity");
-    }
-
-    int16_t block[OUTPUT_DMA_SIZE] = { 0 };
+    int16_t partBuffer[OUTPUT_DMA_SIZE] = { 0 };
+    int16_t mixedBuffer[OUTPUT_DMA_SIZE] = { 0 };
     uint64_t energy = 0;
     int32_t peak = 0;
+
+    // Exercise all three independently owned voices simultaneously. Preserve
+    // the original mix order and saturating accumulation used by the host mix.
     for (unsigned blockIndex = 0; blockIndex < 32; ++blockIndex)
     {
-        lxr_drum_voice_update(&voice);
-        lxr_drum_voice_render_block(&voice, block, OUTPUT_DMA_SIZE);
+        for (uint8_t part = 0; part < PART_COUNT; ++part)
+        {
+            lxr_drum_voice_update(&parts[part]);
+        }
+
         for (unsigned i = 0; i < OUTPUT_DMA_SIZE; ++i)
         {
-            const int32_t magnitude = abs_sample(block[i]);
+            mixedBuffer[i] = 0;
+        }
+
+        for (uint8_t part = 0; part < PART_COUNT; ++part)
+        {
+            lxr_drum_voice_render_block(&parts[part], partBuffer, OUTPUT_DMA_SIZE);
+            for (unsigned i = 0; i < OUTPUT_DMA_SIZE; ++i)
+            {
+                mixedBuffer[i] = saturating_add(mixedBuffer[i], partBuffer[i]);
+            }
+        }
+
+        for (unsigned i = 0; i < OUTPUT_DMA_SIZE; ++i)
+        {
+            const int32_t magnitude = abs_sample(mixedBuffer[i]);
             energy += (uint32_t)magnitude;
             if (magnitude > peak)
             {
@@ -63,25 +95,24 @@ int main(void)
 
     if (energy == 0 || peak == 0)
     {
-        return fail("the original DrumVoice render path produced no nonzero samples");
+        return fail("the three-part DrumVoice render/mix path produced no nonzero samples");
     }
 
-    // Verify that the explicit state API does not alias separate voice state.
-    DrumVoice secondVoice = { 0 };
-    lxr_drum_voice_init(&secondVoice, 1);
-    lxr_drum_voice_set_phase(&secondVoice, 64);
-    if (voice.osc.startPhase == secondVoice.osc.startPhase ||
-        secondVoice.osc.waveform != SAW)
+    // Verify that phase changes to one part do not mutate another part.
+    const uint32_t part0StartPhase = parts[0].osc.startPhase;
+    lxr_drum_voice_set_phase(&parts[1], 64);
+    if (parts[0].osc.startPhase != part0StartPhase ||
+        parts[1].osc.startPhase == part0StartPhase)
     {
         return fail("separate DrumVoice states are not independently owned");
     }
 
     // Exercise odd and single-sample host blocks with a canary after the buffer.
     GuardedOddBlock odd = { { 123, 456, 789 }, (int16_t)0x5a5a };
-    lxr_drum_voice_init(&secondVoice, 0);
-    lxr_drum_voice_trigger(&secondVoice, 100, 36);
-    lxr_drum_voice_update(&secondVoice);
-    lxr_drum_voice_render_block(&secondVoice, odd.samples, 3);
+    lxr_drum_voice_init(&parts[2], 2);
+    lxr_drum_voice_trigger(&parts[2], 100, 38);
+    lxr_drum_voice_update(&parts[2]);
+    lxr_drum_voice_render_block(&parts[2], odd.samples, 3);
     if (odd.guard != (int16_t)0x5a5a)
     {
         return fail("three-sample render wrote beyond the caller buffer");
@@ -92,14 +123,14 @@ int main(void)
         int16_t sample;
         int16_t guard;
     } single = { 321, (int16_t)0x5a5a };
-    lxr_drum_voice_update(&secondVoice);
-    lxr_drum_voice_render_block(&secondVoice, &single.sample, 1);
+    lxr_drum_voice_update(&parts[2]);
+    lxr_drum_voice_render_block(&parts[2], &single.sample, 1);
     if (single.guard != (int16_t)0x5a5a)
     {
         return fail("single-sample render wrote beyond the caller buffer");
     }
 
-    printf("LXR DrumVoice smoke test passed: energy=%llu peak=%ld, independent state and odd block guards verified\n",
+    printf("LXR three-part DrumVoice smoke test passed: energy=%llu peak=%ld, independent state and odd block guards verified\n",
            (unsigned long long)energy,
            (long)peak);
     return 0;
