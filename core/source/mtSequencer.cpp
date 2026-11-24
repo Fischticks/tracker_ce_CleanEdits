@@ -1748,7 +1748,8 @@ void Sequencer::recEnable(bool enable)
 
 AUDIO_CORE_RAM uint8_t Sequencer::isCustomPlayMode(uint8_t row)
 {
-    return player.performanceMode && player.track[row].performancePlayMode >= PLAYMODE_CUSTOM_1;
+    // Pattern Play Mode is track-owned and remains active while its FX value is retained.
+    return player.track[row].performancePlayMode >= PLAYMODE_CUSTOM_1;
 }
 
 void Sequencer::switchRowStep(uint8_t row) // przełączamy stepy w zależności od trybu grania
@@ -1780,7 +1781,8 @@ void Sequencer::switchRowStep(uint8_t row) // przełączamy stepy w zależności
         }
     }
 
-    if (player.performanceMode && isPerformanceTrack(row))
+    // Track play mode is independent of the Performance screen/global mode lifecycle.
+    if (isPerformanceTrack(row))
     {
         playMode = player.track[row].performancePlayMode;
         trackLength = player.performance.trackLength[row];
