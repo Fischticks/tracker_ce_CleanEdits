@@ -135,6 +135,7 @@ void Interface::begin(Platform* platform, Synth* synth)
 void Interface::update()
 {
     processOperatingMode();
+    performanceMode.updateRetainedFxCC();
 
     if (onScreenModule != nullptr && onScreenModule->moduleRefresh)
         onScreenModule->update();

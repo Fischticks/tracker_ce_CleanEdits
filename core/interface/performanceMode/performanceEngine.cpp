@@ -8,6 +8,7 @@
 #include "mtSequencer.h"
 
 #include "performanceFx.h"
+#include "performanceMode.h"
 
 #include "performanceEngine.h"
 
@@ -69,22 +70,24 @@ cPerformFx::cPerformFx(uint8_t fxId,
     performance.fxList[id] = this;
 }
 
-bool cPerformEngine::turnOff()
+bool cPerformEngine::turnOff(bool preserveFx)
 {
     bool wasPerformanceMode = sequencer.isPerformanceMode();
     if (wasPerformanceMode)
-    {
         sequencer.exitPerformanceMode();
-        engine.performanceModeEndAll();
-    }
-
-    for (uint8_t track = 0; track < kPerformanceTracks; track++)
+    if (preserveFx)
     {
-        tracksPerformanceState[track] = 0;
+        retainedFxActive = true;
     }
-
-    resetAllFx();
-
+    else
+    {
+        if (wasPerformanceMode || retainedFxActive)
+            engine.performanceModeEndAll();
+        retainedFxActive = false;
+        for (uint8_t track = 0; track < kPerformanceTracks; track++)
+            tracksPerformanceState[track] = 0;
+        resetAllFx();
+    }
     return wasPerformanceMode;
 }
 
@@ -344,6 +347,7 @@ void cPerformEngine::loadGlobalFxValue(int fxIdx, int value)
 {
     if (fxIdx > 0)
     {
+        performanceMode.onManualGlobalFxChange(value);
         fxList[fxIdx]->setFunct(0, value);
     }
 }

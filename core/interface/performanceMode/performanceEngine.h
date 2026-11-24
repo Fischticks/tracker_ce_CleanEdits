@@ -39,7 +39,8 @@ class cPerformEngine
 
     ~cPerformEngine() {}
 
-    bool turnOff();
+    bool turnOff(bool preserveFx = false);
+    void markRetainedFxActive() { retainedFxActive = true; }
 
     void forceSaveConfig();
 
@@ -123,6 +124,7 @@ class cPerformEngine
     uint8_t dataSourcesCount;
 
     bool editState;
+    bool retainedFxActive = false;
     bool isSlotCopied = false;
     uint8_t slotCopied;
 

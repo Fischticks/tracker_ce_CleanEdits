@@ -14,6 +14,7 @@
 #include "Platform.h"
 #include "TrackerImpl.h"
 #include "core/interface.h"
+#include "performanceMode/performanceMode.h"
 #include "util_math.h"
 #include <cmath>
 
@@ -363,7 +364,7 @@ void handleJackControlChange(byte channel, byte number, byte value)
 
     if ((channel == mtConfig.midi.ccInChannel) || (mtConfig.midi.ccInChannel == ALL_CC_CHANNELS))
     {
-        if (mtInterface.isPerformanceModeScreenActive())
+        if (mtInterface.isPerformanceModeScreenActive() || performanceMode.hasAnyPerformanceFxActive())
             peformanceModeOnMidiCC(number, value);
 
         changeMixerOnMidiCC(number, value);
@@ -380,7 +381,7 @@ void handleUSBControlChange(byte channel, byte number, byte value)
 
     if ((channel == mtConfig.midi.ccInChannel) || (mtConfig.midi.ccInChannel == ALL_CC_CHANNELS))
     {
-        if (mtInterface.isPerformanceModeScreenActive())
+        if (mtInterface.isPerformanceModeScreenActive() || performanceMode.hasAnyPerformanceFxActive())
             peformanceModeOnMidiCC(number, value);
 
         changeMixerOnMidiCC(number, value);

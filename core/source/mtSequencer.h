@@ -366,6 +366,9 @@ class Sequencer
         bool sequencialSwitch_loaded = 0;
         // Set by stop() in the audio callback, carried out by update().
         bool reloadPatternAfterStop = 0;
+        bool performanceExitBoundaryPending = false;
+        bool performanceExitBoundarySwapCompleted = false;
+        bool restoreWorkspacePatternAfterPerformanceExit = false;
         int activePatternIdx = -1;
 
         bool isPlay = 0;
@@ -717,11 +720,10 @@ class Sequencer
 
     bool isPerformanceMode() { return player.performanceMode; }
 
-    void exitPerformanceMode()
-    {
-        player.performanceMode = 0;
-        player.performance.patternLength = -1;
-    }
+    void exitPerformanceMode();
+    void schedulePerformanceModeExit();
+    void restoreWorkspacePatternAfterPerformanceExit();
+    void discardPerformanceModeForProjectReplacement();
 
     bool isPerformancePatternChanged()
     {

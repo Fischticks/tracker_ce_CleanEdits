@@ -1,11 +1,16 @@
 #include "core/interface.h"
 #include "core/interfacePopups.h"
+#include "performanceMode/performanceMode.h"
 
 #include "Platform.h"
 
 #ifdef MOD_PATTERN_SETTINGS
 #include "shiftPattern/shiftPattern.h"
 #endif
+
+// Shift + Perform is a global chord. Defer Perform until release so either chord order is recognized.
+static bool pendingPerformPress = false;
+static bool consumedPerformChord = false;
 
 #ifdef TRACKER_MINI
 bool fnButtonShiftPressed[4] = { false, false, false, false };
@@ -29,6 +34,50 @@ void Interface::potChange(uint8_t n, int16_t value)
 //=======================================================================
 void Interface::buttonChange(uint8_t n, uint8_t value)
 {
+    auto* buttons = getPlatform()->getButtons();
+
+    if (n == interfaceButtonPerformance)
+    {
+        if (value == buttonPress)
+        {
+            if (buttons->isButtonPressed(interfaceButtonShift))
+            {
+                pendingPerformPress = false;
+                consumedPerformChord = true;
+                performanceMode.shiftPerformRecall();
+                return;
+            }
+            pendingPerformPress = true;
+            return;
+        }
+        if (value == buttonHold && (pendingPerformPress || consumedPerformChord))
+            return;
+        if (value == buttonRelease)
+        {
+            if (consumedPerformChord)
+            {
+                consumedPerformChord = false;
+                pendingPerformPress = false;
+                return;
+            }
+            if (pendingPerformPress)
+            {
+                pendingPerformPress = false;
+                ip->processButtonsInput(n, buttonPress);
+                ip->processButtonsInput(n, buttonRelease);
+                return;
+            }
+        }
+    }
+    else if (n == interfaceButtonShift && value == buttonPress &&
+             buttons->isButtonPressed(interfaceButtonPerformance))
+    {
+        pendingPerformPress = false;
+        consumedPerformChord = true;
+        performanceMode.shiftPerformRecall();
+        return;
+    }
+
 #ifdef MOD_PATTERN_SETTINGS
     // Global Shift + Pattern shortcut: take priority over each module's Pattern-button mapping.
     if (n == interfaceButtonPattern && value == buttonPress && onScreenModule != nullptr &&

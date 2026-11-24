@@ -78,10 +78,13 @@ void cPerformanceMode::update()
 
 void cPerformanceMode::start(uint32_t options)
 {
+    sequencer.restoreWorkspacePatternAfterPerformanceExit();
+
     // ustawienie trackow
     if (!dontClearPerformanceMode)
     {
-        performance.resetSelectedRows();
+        if (!hasAnyPerformanceFxActive())
+            performance.resetSelectedRows();
         tracksPage = 0;
 
         for (uint8_t q = 0; q < kPerformanceTracks; q++)
@@ -108,12 +111,13 @@ void cPerformanceMode::start(uint32_t options)
     // czyszczenie afektowania traków
     for (uint8_t track = 0; track < kPerformanceTracks; track++)
     {
-        if (!dontClearPerformanceMode)
+        if (!dontClearPerformanceMode && !hasAnyPerformanceFxActive())
             performance.setTrackState(track, 0); // ustaw na 0
     }
 
     // prezepisanie aktualnie zaznaczonych wartosci do tablicy wartosci chwilowych
-    performance.loadSelectedValuesToTempValues();
+    if (!hasAnyPerformanceFxActive())
+        performance.loadSelectedValuesToTempValues();
 
     if (dontClearPerformanceMode)
     {
@@ -154,18 +158,15 @@ void cPerformanceMode::start(uint32_t options)
 
 void cPerformanceMode::stop()
 {
+    // Position LFO is screen-scoped even when sequencer Performance Mode continues.
+    engine.performanceModeEndPositionLfoRateAll();
+
     if (!dontClearPerformanceMode)
     {
-        if (performance.turnOff())
-        {
-            newFileManager.loadWorkspacePatternNow(mtProject.values.actualPattern);
-            sequencer.switchRamPatternsNow();
-        }
+        turnOff();
         mtPadBoard.releaseAllInstruments();
     }
-
     performance.forceSaveConfig();
-
     moduleRefresh = 0;
     padsBacklight.clearGlobalPads(1, 1, 1);
 }
@@ -238,28 +239,147 @@ void cPerformanceMode::setProjectSaveFlags()
     //	fileManager.projectChangeFlag = 1;
 }
 
-bool cPerformanceMode::turnOff()
+bool cPerformanceMode::turnOff(bool fromAudioCallback, bool forceClearFx)
 {
-    return performance.turnOff();
+    const bool wasPerformanceMode = sequencer.isPerformanceMode();
+    const bool preserveFx = !forceClearFx && hasAnyPerformanceFxActive();
+    performance.turnOff(preserveFx);
+    if (preserveFx)
+        engine.performanceModeEndPositionLfoRateAll();
+
+    for (uint8_t track = 0; track < kPerformanceTracks; track++)
+    {
+        trackPatternChange[track] = 0;
+        isCCToReceiveForTrack[track] = false;
+        currentCCValueForTrack[track] = 0;
+    }
+    if (!preserveFx)
+    {
+        for (uint8_t slot = 0; slot < 12; slot++)
+            isCCToReceiveForSlot[slot] = false;
+    }
+    refreshTrackPattern = 1;
+    refreshTrackState = 1;
+    dontClearPerformanceMode = 0;
+
+    if (!fromAudioCallback)
+        sequencer.restoreWorkspacePatternAfterPerformanceExit();
+    return wasPerformanceMode;
+}
+
+bool cPerformanceMode::hasAnyTrackOptedIn() const
+{
+    for (uint8_t track = 0; track < kPerformanceTracks; track++)
+    {
+        if (performance.getTrackState(track))
+            return true;
+    }
+    return false;
+}
+
+bool cPerformanceMode::hasAnyPerformanceFxActive() const
+{
+    return hasAnyTrackOptedIn() || sequencer.ptrPlayer->performance.patternLength >= 0;
+}
+
+void cPerformanceMode::onManualTrackOptInChange()
+{
+    if (!hasAnyPerformanceFxActive())
+    {
+        recallBufferValid = false;
+        recallPatternLength = -1;
+    }
+}
+
+void cPerformanceMode::onManualGlobalFxChange(int value)
+{
+    if (value > 0 && !hasAnyPerformanceFxActive())
+    {
+        recallBufferValid = false;
+        recallPatternLength = -1;
+    }
+}
+
+void cPerformanceMode::shiftPerformRecall()
+{
+    if (hasAnyPerformanceFxActive())
+    {
+        for (uint8_t track = 0; track < kPerformanceTracks; track++)
+            recallTrackStates[track] = performance.getTrackState(track);
+        recallPatternLength = sequencer.ptrPlayer->performance.patternLength;
+        recallBufferValid = true;
+        turnOff(false, true);
+    }
+    else if (recallBufferValid)
+    {
+        for (uint8_t track = 0; track < kPerformanceTracks; track++)
+        {
+            if (recallTrackStates[track])
+                performance.toggleTrackState(track);
+        }
+        if (recallPatternLength >= 0)
+            sequencer.setPerformancePatternLength(recallPatternLength + 1);
+        recallBufferValid = false;
+        recallPatternLength = -1;
+        performance.markRetainedFxActive();
+    }
+    else
+    {
+        for (uint8_t track = 0; track < kPerformanceTracks; track++)
+            performance.toggleTrackState(track);
+        performance.markRetainedFxActive();
+    }
+
+    // If the shortcut is used while the Performance screen remains open,
+    // restore sequencer Performance Mode along with the saved FX configuration.
+    if (mtInterface.isPerformanceModeScreenActive() && !sequencer.isPerformanceMode() &&
+        hasAnyPerformanceFxActive())
+        sequencer.enterPerformanceMode();
+
+    refreshTrackState = 1;
+}
+
+void cPerformanceMode::resetForProjectReplacement()
+{
+    const bool wasPerformanceMode = sequencer.isPerformanceMode();
+    sequencer.discardPerformanceModeForProjectReplacement();
+    if (wasPerformanceMode)
+        engine.performanceModeEndAll();
+    recallBufferValid = false;
+    recallPatternLength = -1;
+    for (uint8_t track = 0; track < kPerformanceTracks; track++)
+        recallTrackStates[track] = 0;
+    dontClearPerformanceMode = 0;
+    performance.turnOff(false);
+
+    for (uint8_t track = 0; track < kPerformanceTracks; track++)
+    {
+        trackPatternChange[track] = 0;
+        isCCToReceiveForTrack[track] = false;
+        currentCCValueForTrack[track] = 0;
+    }
+    for (uint8_t slot = 0; slot < 12; slot++)
+        isCCToReceiveForSlot[slot] = false;
+
+    refreshTrackPattern = 1;
+    refreshTrackState = 1;
 }
 
 void cPerformanceMode::turnOffAtEndOfPattern()
 {
     if (!sequencer.isPerformanceMode())
         return;
-
     if (!sequencer.isPlay())
     {
-        // No pattern end is coming that could do it.
         turnOff();
         dontClearPerformanceMode = 0;
         return;
     }
 
     dontClearPerformanceMode = 1;
+    sequencer.schedulePerformanceModeExit();
     if (!sequencer.isSongMode())
     {
-        // force pattern reload to clear changed tracks
         sequencer.sequencialSwitch_changeNextPattern(0);
         sequencer.sequencialSwitch_SetReady();
     }
@@ -300,41 +420,47 @@ uint8_t cPerformanceMode::fxAlredyTaken(uint8_t fx)
     return 0;
 }
 
+void cPerformanceMode::refreshFxCC(bool updateDisplay)
+{
+    for (uint8_t slot = 0; slot < 12; slot++)
+    {
+        if (!isCCToReceiveForSlot[slot])
+            continue;
+        performance.setSelectedRow(slot, 4);
+        performance.setCCValue(currentCCValueForSlot[slot], slot);
+        performance.loadCCValuesOnAffectedTracks(slot);
+        if (updateDisplay)
+        {
+            showPerformaceValue(slot);
+            lightUpPadBoard();
+        }
+        isCCToReceiveForSlot[slot] = false;
+    }
+}
+
 void cPerformanceMode::refreshAllCC()
 {
-    for (uint8_t ccForSlot = 0; ccForSlot < 12; ccForSlot++)
+    refreshFxCC(true);
+    for (uint8_t track = 0; track < kPerformanceTracks; track++)
     {
-        if (isCCToReceiveForSlot[ccForSlot])
-        {
-            performance.setSelectedRow(ccForSlot, 4);
-            performance.setCCValue(currentCCValueForSlot[ccForSlot], ccForSlot);
-            performance.loadCCValuesOnAffectedTracks(ccForSlot);
-            showPerformaceValue(ccForSlot);
-            lightUpPadBoard();
-
-            isCCToReceiveForSlot[ccForSlot] = false;
-        }
-    }
-
-    for (uint8_t ccForTrack = 0; ccForTrack < kPerformanceTracks; ccForTrack++)
-    {
-        if (isCCToReceiveForTrack[ccForTrack])
-        {
-            trackPatternChange[ccForTrack] = 0;
-            mtProject.perfTracksPatterns[ccForTrack] =
-              currentCCValueForTrack[ccForTrack] + 1;
-            setProjectSaveFlags();
-
-            sequencer.setTrackToLoadOnSwitch(ccForTrack,
-                                             mtProject.perfTracksPatterns[ccForTrack]);
-
-            PM->refreshBlinkingTrack = 1;
-            refreshTrackPattern = 1;
-
-            isCCToReceiveForTrack[ccForTrack] = false;
-        }
+        if (!isCCToReceiveForTrack[track])
+            continue;
+        trackPatternChange[track] = 0;
+        mtProject.perfTracksPatterns[track] = currentCCValueForTrack[track] + 1;
+        setProjectSaveFlags();
+        sequencer.setTrackToLoadOnSwitch(track, mtProject.perfTracksPatterns[track]);
+        refreshBlinkingTrack = 1;
+        refreshTrackPattern = 1;
+        isCCToReceiveForTrack[track] = false;
     }
     display.synchronizeRefresh();
+}
+
+void cPerformanceMode::updateRetainedFxCC()
+{
+    if (!hasAnyPerformanceFxActive() || mtInterface.isPerformanceModeScreenActive())
+        return;
+    refreshFxCC(false);
 }
 
 //=================================================================================
@@ -742,6 +868,7 @@ static void functActionButton(uint8_t button, uint8_t state)
             }
             else
             {
+                PM->onManualTrackOptInChange();
                 performance.toggleTrackState(track);
 
                 PM->refreshTrackState = 1;
@@ -895,6 +1022,10 @@ void peformanceModeOnMidiCC(uint8_t cc_idx, uint8_t cc_value)
     constexpr uint8_t PERFORMANCE_MODE_CC_FOR_TRACK_RANGE_MIN = 41;
     constexpr uint8_t PERFORMANCE_MODE_CC_FOR_TRACK_RANGE_MAX = 48;
 
+    const bool performanceScreenActive = mtInterface.isPerformanceModeScreenActive();
+    if (!performanceScreenActive && !PM->hasAnyPerformanceFxActive())
+        return;
+
     if ((cc_idx <= PERFORMANCE_MODE_CC_FOR_SLOT_RANGE_MAX) &&
         (cc_idx >= PERFORMANCE_MODE_CC_FOR_SLOT_RANGE_MIN))
     {
@@ -903,7 +1034,8 @@ void peformanceModeOnMidiCC(uint8_t cc_idx, uint8_t cc_value)
         PM->isCCToReceiveForSlot[ccToSlot] = true;
         PM->currentCCValueForSlot[ccToSlot] = cc_value;
     }
-    else if ((cc_idx <= PERFORMANCE_MODE_CC_FOR_TRACK_RANGE_MAX) &&
+    else if (performanceScreenActive &&
+             (cc_idx <= PERFORMANCE_MODE_CC_FOR_TRACK_RANGE_MAX) &&
              (cc_idx >= PERFORMANCE_MODE_CC_FOR_TRACK_RANGE_MIN))
     {
         uint8_t ccToTrack = cc_idx - PERFORMANCE_MODE_CC_FOR_TRACK_RANGE_MIN;
@@ -933,7 +1065,7 @@ static void functMiniMiddle(uint8_t state)
 
 AUDIO_CORE_RAM void cbkTurnOffPerformanceMode(void)
 {
-    performanceMode.turnOff();
+    performanceMode.turnOff(true);
     performanceMode.dontClearPerformanceMode = 0;
     sequencer.setOnPatternOrSelectionEnd(nullCallback);
 }

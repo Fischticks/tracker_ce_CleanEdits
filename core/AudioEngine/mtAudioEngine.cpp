@@ -767,6 +767,12 @@ AUDIO_CORE_RAM void audioEngine::endAllFx(bool synthOnly)
 #endif
 }
 
+void audioEngine::performanceModeEndPositionLfoRateAll()
+{
+    for (uint8_t i = 0; i < 8; i++)
+        instrumentPlayer[i].endPositionLfoRatePerformanceMode();
+}
+
 void audioEngine::performanceModeEndAll()
 {
     for (uint8_t i = 0; i < 8; i++)
@@ -1738,7 +1744,11 @@ AUDIO_CORE_RAM void playerEngine ::modCutoff(float value)
 }
 AUDIO_CORE_RAM void playerEngine ::modResonance(float value)
 {
-    if (mtProject.instrument[currentInstrument_idx].filterEnable)
+    const bool filterEnabled =
+      (mtProject.instrument[currentInstrument_idx].filterEnable == 1) ||
+      trackControlParameter[(int)controlType::performanceMode][(int)parameterList::filterEnable];
+
+    if (filterEnabled)
     {
         for (int channel = 0; channel < (int)filterPtr.size(); channel++)
         {

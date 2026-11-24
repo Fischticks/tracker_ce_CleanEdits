@@ -314,6 +314,8 @@ void playerEngine ::changeCutoffPerformanceMode(
 
     if (!isActiveEnvelope(envCutoff))
         modCutoff(currentPerformanceValues.filterCutoff);
+    else
+        setRefreshBit(CUTOFF_MASK);
 }
 void playerEngine ::changeFilterTypePerformanceMode(uint8_t mode)
 {
@@ -594,6 +596,8 @@ void playerEngine::changePositionLfoRatePerformanceMode(int8_t value)
 
     if (mtProject.instrument[currentInstrument_idx].playMode == playModeGranular)
     {
+        trackControlParameter[(int)controlType::performanceMode]
+                             [(int)parameterList::lfoWavetablePosition] = 0;
         if ((trackControlParameter[(int)controlType::performanceMode]
                                   [(int)parameterList::lfoGranularPosition] != 1) &&
             (value == 0))
@@ -637,6 +641,8 @@ void playerEngine::changePositionLfoRatePerformanceMode(int8_t value)
 
     else if (mtProject.instrument[currentInstrument_idx].playMode == playModeWavetable)
     {
+        trackControlParameter[(int)controlType::performanceMode]
+                             [(int)parameterList::lfoGranularPosition] = 0;
         if ((trackControlParameter[(int)controlType::performanceMode]
                                   [(int)parameterList::lfoWavetablePosition] != 1) &&
             (value == 0))
@@ -676,6 +682,13 @@ void playerEngine::changePositionLfoRatePerformanceMode(int8_t value)
 
         trackControlParameter[(int)controlType::performanceMode]
                              [(int)parameterList::lfoWavetablePosition] = 1;
+    }
+    else
+    {
+        trackControlParameter[(int)controlType::performanceMode]
+                             [(int)parameterList::lfoGranularPosition] = 0;
+        trackControlParameter[(int)controlType::performanceMode]
+                             [(int)parameterList::lfoWavetablePosition] = 0;
     }
 }
 void playerEngine::changePanningLfoRatePerformanceMode(int8_t value)
@@ -925,23 +938,29 @@ void playerEngine::endStartPointPerformanceMode()
 
 void playerEngine::endCutoffPerformanceMode()
 {
+    const bool cutoffEnvelopeActive = isActiveEnvelope(envCutoff);
+
     if (!trackControlParameter[(int)controlType::sequencerMode][(int)parameterList::filterCutoff] &&
         !trackControlParameter[(int)controlType::sequencerMode2][(int)parameterList::filterCutoff])
     {
         if (!mtProject.instrument[currentInstrument_idx].filterEnable)
             filterDisconnect();
-        if (!isActiveEnvelope(envCutoff))
+        if (!cutoffEnvelopeActive)
             modCutoff(mtProject.instrument[currentInstrument_idx].cutOff);
     }
     else
     {
-        if (!isActiveEnvelope(envCutoff))
+        if (!cutoffEnvelopeActive)
             modCutoff(currentSeqModValues.filterCutoff);
     }
 
     trackControlParameter[(int)controlType::performanceMode][(int)parameterList::filterCutoff] = 0;
     trackControlParameter[(int)controlType::performanceMode][(int)parameterList::filterEnable] = 0;
     currentPerformanceValues.filterEnable = 0;
+
+    // Reapply the underlying cutoff together with the live envelope after releasing Performance FX ownership.
+    if (cutoffEnvelopeActive)
+        setRefreshBit(CUTOFF_MASK);
 }
 void playerEngine::endFilterTypePerformanceMode()
 {
@@ -1226,8 +1245,8 @@ void playerEngine::endPositionLfoRatePerformanceMode()
         trackControlParameter[(int)controlType::performanceMode]
                              [(int)parameterList::lfoGranularPosition] = 0;
     }
-    else if (trackControlParameter[(int)controlType::performanceMode]
-                                  [(int)parameterList::lfoWavetablePosition])
+    if (trackControlParameter[(int)controlType::performanceMode]
+                             [(int)parameterList::lfoWavetablePosition])
     {
         uint8_t curWtLoop = mtProject.instrument[currentInstrument_idx].envelope[envWtPos].loop;
         if (trackControlParameter[(int)controlType::sequencerMode]
