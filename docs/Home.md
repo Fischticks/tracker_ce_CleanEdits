@@ -8,6 +8,9 @@ Welcome to the official documentation for **Polyend Tracker Community Edition (C
 
 ## Musician & User Guides
 
+* **[Performance FX & Track Play Modes (`docs/performance_fx_and_play_modes.md`)](performance_fx_and_play_modes.md)**
+  * Retained per-track Performance FX, global Pattern Length, Shift + Perform snapshot/recall, filter ownership, and track-owned Play Modes during Song playback.
+
 * **[Custom Themes & Fonts (`docs/custom_themes_and_fonts.md`)](custom_themes_and_fonts.md)**
   * How to install and create custom JSON color themes (`/Themes/*.json`) and custom antialiased bitmap fonts (`/Fonts/*.ptfont`) using the [Web Theme & Font Editor](https://polyend.github.io/tracker-theme-editor/) ([`polyend/tracker-theme-editor`](https://github.com/polyend/tracker-theme-editor)), plus full color key reference tables.
 * **[Wavetable Envelopes, LFOs & Step FX (`docs/wavetable_envelopes.md`)](wavetable_envelopes.md)**
