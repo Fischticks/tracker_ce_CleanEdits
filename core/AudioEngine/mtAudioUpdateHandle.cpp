@@ -23,7 +23,9 @@ AUDIO_CORE_RAM void playerEngine::update()
        (trackControlParameter[(int)controlType::sequencerMode][envelopesControlValue[envAmp]]) ||
        (trackControlParameter[(int)controlType::sequencerMode2][envelopesControlValue[envAmp]]) ||
        (trackControlParameter[(int)controlType::performanceMode][envelopesControlValue[envAmp]]));
-    envelopeCondition[envCutoff] = (mtProject.instrument[currentInstrument_idx].filterEnable == 1);
+    envelopeCondition[envCutoff] =
+      (mtProject.instrument[currentInstrument_idx].filterEnable == 1) ||
+      trackControlParameter[(int)controlType::performanceMode][(int)parameterList::filterEnable];
     envelopeCondition[envPan] = true;
     envelopeCondition[envWtPos] =
       (mtProject.instrument[currentInstrument_idx].sample.type == mtSampleTypeWavetable) ||
@@ -793,7 +795,11 @@ inline void playerEngine::handleUpdateRefreshCutoffLFO()
     {
         refreshRegister &= (~LFO_FILTER_SEND_MASK);
 
-        if (mtProject.instrument[currentInstrument_idx].filterEnable)
+        const bool filterEnabled =
+          (mtProject.instrument[currentInstrument_idx].filterEnable == 1) ||
+          trackControlParameter[(int)controlType::performanceMode][(int)parameterList::filterEnable];
+
+        if (filterEnabled)
         {
             if ((mtProject.instrument[currentInstrument_idx].envelope[envCutoff].enable) &&
                 (!trackControlParameter[(int)controlType::sequencerMode]
