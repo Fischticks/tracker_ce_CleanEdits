@@ -13,6 +13,8 @@
 #include "performanceEngine.h"
 #include "util_math.h"
 
+#include <string.h>
+
 cPerformanceMode performanceMode;
 static cPerformanceMode* PM = &performanceMode;
 
@@ -83,7 +85,9 @@ void cPerformanceMode::start(uint32_t options)
     // ustawienie trackow
     if (!dontClearPerformanceMode)
     {
-        if (!hasAnyPerformanceFxActive())
+        // Keep the configured FX rows while a Shift + Perform snapshot is
+        // waiting to be recalled; entering this screen must not erase that setup.
+        if (!hasAnyPerformanceFxActive() && !recallBufferValid)
             performance.resetSelectedRows();
         tracksPage = 0;
 
@@ -106,6 +110,22 @@ void cPerformanceMode::start(uint32_t options)
     if (mtConfig.general.performanceSource < performanceDataSourceCount)
     {
         performance.readPerfData(mtConfig.general.performanceSource);
+    }
+
+    // A pending Shift + Perform recall means Pattern Length was explicitly
+    // bypassed. Reapply that row state after readPerfData(), which rebinds the
+    // slot pointers to the selected Performance data source.
+    if (recallBufferValid)
+    {
+        for (uint8_t slot = 0; slot < 12; slot++)
+        {
+            if (strcmp(performance.getSlotFxName(slot), "Pattern length") == 0)
+            {
+                performance.resetSlotFx(slot);
+                performance.setSelectedRow(slot, 0);
+                break;
+            }
+        }
     }
 
     // czyszczenie afektowania traków
@@ -307,18 +327,36 @@ void cPerformanceMode::shiftPerformRecall()
         for (uint8_t track = 0; track < kPerformanceTracks; track++)
             recallTrackStates[track] = performance.getTrackState(track);
         recallPatternLength = sequencer.ptrPlayer->performance.patternLength;
+        performance.captureFxRecallState(recallFxRows, recallFxValues);
         recallBufferValid = true;
         turnOff(false, true);
+
+        // turnOff(..., true) clears the live global FX. Also select bypass
+        // for Pattern Length; its original row/value remain in the recall buffer.
+        for (uint8_t slot = 0; slot < 12; slot++)
+        {
+            if (strcmp(performance.getSlotFxName(slot), "Pattern length") == 0)
+            {
+                performance.resetSlotFx(slot);
+                performance.setSelectedRow(slot, 0);
+                break;
+            }
+        }
     }
     else if (recallBufferValid)
     {
+        // Restore the selected FX rows and their live values before re-enabling tracks.
+        performance.restoreFxRecallState(recallFxRows, recallFxValues);
+
+        // The sequencer's saved Pattern Length is authoritative for playback timing.
+        if (recallPatternLength >= 0)
+            sequencer.setPerformancePatternLength(recallPatternLength + 1);
+
         for (uint8_t track = 0; track < kPerformanceTracks; track++)
         {
             if (recallTrackStates[track])
                 performance.toggleTrackState(track);
         }
-        if (recallPatternLength >= 0)
-            sequencer.setPerformancePatternLength(recallPatternLength + 1);
         recallBufferValid = false;
         recallPatternLength = -1;
         performance.markRetainedFxActive();
@@ -337,6 +375,11 @@ void cPerformanceMode::shiftPerformRecall()
         sequencer.enterPerformanceMode();
 
     refreshTrackState = 1;
+    if (mtInterface.isPerformanceModeScreenActive())
+    {
+        showAllPerformanceValues();
+        lightUpPadBoard();
+    }
 }
 
 void cPerformanceMode::resetForProjectReplacement()

@@ -378,6 +378,8 @@ class Sequencer
 
         uint16_t uStep = 0;
         uint16_t globalPos = 0;
+        // Actual pattern timeline, independent of track-local Performance loops.
+        uint16_t patternPosition = 0;
 
         bool breakPattern = 0; // stops pattern after current step
         bool endOfPattern = false;
