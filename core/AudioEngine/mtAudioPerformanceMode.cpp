@@ -931,6 +931,11 @@ void playerEngine::endStartPointPerformanceMode()
           0;
         changePointsPerformanceMode(0, performanceMod.endPoint);
         return;
+    }
+
+    endPointsPerformanceMode();
+}
+
 void playerEngine::endCutoffPerformanceMode()
 {
     const bool cutoffEnvelopeActive = isActiveEnvelope(envCutoff);
