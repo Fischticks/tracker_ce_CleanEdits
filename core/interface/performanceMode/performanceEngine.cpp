@@ -162,7 +162,8 @@ void cPerformEngine::restoreFxRecallState(const uint8_t selectedRows[12],
     {
         // Restore the selected row and its live value independently of the saved
         // Performance data source. The active value may differ from the stored preset.
-        const uint8_t row = selectedRows[slot] > 3 ? 3 : selectedRows[slot];
+        // Row 4 is the temporary MIDI-CC selection; preserve it as well.
+        const uint8_t row = selectedRows[slot] > 4 ? 4 : selectedRows[slot];
         slotToRow[slot] = slotToFx[slot] == 0 ? 0 : row;
         slotsTempValues[slot] = activeValues[slot];
     }
