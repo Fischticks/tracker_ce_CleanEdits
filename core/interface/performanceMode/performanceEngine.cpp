@@ -146,6 +146,42 @@ void cPerformEngine::loadSelectedValuesToTempValues()
     }
 }
 
+void cPerformEngine::captureFxRecallState(uint8_t selectedRows[12], int16_t activeValues[12]) const
+{
+    for (uint8_t slot = 0; slot < 12; slot++)
+    {
+        selectedRows[slot] = slotToRow[slot];
+        activeValues[slot] = slotsTempValues[slot];
+    }
+}
+
+void cPerformEngine::restoreFxRecallState(const uint8_t selectedRows[12],
+                                          const int16_t activeValues[12])
+{
+    for (uint8_t slot = 0; slot < 12; slot++)
+    {
+        // Restore the selected row and its live value independently of the saved
+        // Performance data source. The active value may differ from the stored preset.
+        const uint8_t row = selectedRows[slot] > 3 ? 3 : selectedRows[slot];
+        slotToRow[slot] = slotToFx[slot] == 0 ? 0 : row;
+        slotsTempValues[slot] = activeValues[slot];
+    }
+
+    // Global Performance FX are not loaded by loadAllSlotsFxOnTrack(). Restore them
+    // directly so this internal recall does not look like a manual configuration edit.
+    for (uint8_t slot = 0; slot < 12; slot++)
+    {
+        const uint8_t fx = slotToFx[slot];
+        if (fx == 0 || !fxList[fx]->setup->isGlobalFx)
+            continue;
+
+        if (slotToRow[slot] > 0)
+            fxList[fx]->setFunct(0, slotsTempValues[slot]);
+        else
+            fxList[fx]->clearFunct(0);
+    }
+}
+
 void cPerformEngine::toggleTrackState(uint8_t track)
 {
     tracksPerformanceState[track] = !tracksPerformanceState[track];
