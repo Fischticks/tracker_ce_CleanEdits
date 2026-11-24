@@ -349,7 +349,9 @@ AUDIO_CORE_RAM void Sequencer::play_microStep(int row)
     if (playerRow.uStep == 1 && player.isPlay && row == 0)
     {
 
-        bool isLastStepInPattern = playerRow.actual_pos == patternRow.length;
+        // Preload by cycle position, not displayed step: Performance Play Modes can
+        // move actual_pos backward or jump it while actual_pos_absolute stays sequential.
+        bool isLastStepInPattern = playerRow.actual_pos_absolute == patternRow.length;
         bool isLastStepInSelectionMode =
           player.selectionModeLooped && playerRow.actual_pos == player.selectionModeLastStep;
 
@@ -1869,8 +1871,6 @@ void Sequencer::switchRowStep(uint8_t row) // przełączamy stepy w zależności
                     player.track[row].performanceSourcePattern = -1;
                 }
 
-                if ((player.onPatternOrSelectionEnd != NULL) && (row == kAllTracks - 1))
-                    player.onPatternOrSelectionEnd();
             }
             break;
 
