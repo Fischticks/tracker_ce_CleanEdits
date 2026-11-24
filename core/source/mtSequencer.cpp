@@ -150,15 +150,17 @@ bool Sequencer::isFirstPatternStep(void)
 
 bool Sequencer::isLastPatternStep(void)
 {
-    int8_t currentPos = 0;
-    int8_t trackLength = getPatternLengthWithSel();
+    uint16_t currentPos = 0;
+    uint8_t trackLength = 0;
     if (player.selectionMode)
     {
         currentPos = player.globalPos;
+        trackLength = getPatternLengthWithSel();
     }
     else
     {
-        currentPos = player.track[0].actual_pos_absolute;
+        currentPos = player.patternPosition;
+        trackLength = currentPattern->track[0].length;
     }
 
     return player.endOfPattern || currentPos >= trackLength;
@@ -351,7 +353,8 @@ AUDIO_CORE_RAM void Sequencer::play_microStep(int row)
 
         // Preload by cycle position, not displayed step: Performance Play Modes can
         // move actual_pos backward or jump it while actual_pos_absolute stays sequential.
-        bool isLastStepInPattern = playerRow.actual_pos_absolute == patternRow.length;
+        bool isLastStepInPattern =
+          !player.selectionMode && player.patternPosition == currentPattern->track[0].length;
         bool isLastStepInSelectionMode =
           player.selectionModeLooped && playerRow.actual_pos == player.selectionModeLastStep;
 
@@ -1375,6 +1378,7 @@ AUDIO_CORE_RAM void Sequencer::play(uint8_t fromPos)
 
     player.uStep = 1;
     player.globalPos = fromPos;
+    player.patternPosition = fromPos;
     for (int trackIdx = 0; trackIdx < kAllTracks; trackIdx++)
     {
         player.track[trackIdx].uStep = 1;
@@ -1939,6 +1943,14 @@ void Sequencer::switchRowStep(uint8_t row) // przełączamy stepy w zależności
             break;
     }
 
+    // Performance Pattern Length controls the local track loop, not the actual pattern boundary.
+    // Selection playback retains its existing selection/track boundary behavior.
+    if (row == kAllTracks - 1 && !player.selectionMode)
+    {
+        player.endOfPattern = player.patternPosition > currentPattern->track[0].length ||
+                              player.breakPattern;
+    }
+
     if (player.endOfPattern)
     {
         bool isNextPatternAvailable = 0; // jeśli 0 to song sie skonczyl
@@ -1996,6 +2008,9 @@ void Sequencer::switchRowStep(uint8_t row) // przełączamy stepy w zależności
             }
             PM->refreshTrackPattern = 1;
         }
+
+        // A completed natural or forced boundary starts a new actual-pattern timeline.
+        player.patternPosition = 0;
     }
 }
 
@@ -2229,6 +2244,7 @@ AUDIO_CORE_RAM void Sequencer::reset_actual_pos(void)
     }
 
     player.globalPos = 0;
+    player.patternPosition = 0;
 }
 
 AUDIO_CORE_RAM void Sequencer::reset_actual_pos(uint8_t row, uint8_t delta /* = 0 */)
@@ -2374,6 +2390,7 @@ AUDIO_CORE_RAM void Sequencer::inc_uStepGlobal()
     {
         player.uStep = 1;
         player.globalPos++;
+        player.patternPosition++;
 
         if (player.selectionMode && !player.selectionModeLooped)
         {
@@ -3895,6 +3912,7 @@ void Sequencer::handleMidiInStart(bool continuePlay, bool songMode)
             if (startStep > 0)
             {
                 player.globalPos = startStep;
+                player.patternPosition = startStep;
                 for (int trackIdx = 0; trackIdx < kAllTracks; trackIdx++)
                 {
                     player.track[trackIdx].actual_pos = startStep;
