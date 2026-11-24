@@ -156,6 +156,7 @@ If you prefer a video, have a look here: https://youtu.be/1F6wx2ftFVA
 Full user and developer documentation is available in [`docs/`](docs/Home.md) and on the repository **Wiki**:
 
 * **User Guides**:
+  * [Performance FX & Track Play Modes](docs/performance_fx_and_play_modes.md)
   * [Custom Themes & Fonts](docs/custom_themes_and_fonts.md) + [Live Web Editor](https://polyend.github.io/tracker-theme-editor/) ([`polyend/tracker-theme-editor`](https://github.com/polyend/tracker-theme-editor))
   * [Wavetable Envelopes, LFOs & Step FX](docs/wavetable_envelopes.md)
   * [SD Card Image Viewer](docs/image_viewer.md)
