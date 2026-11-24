@@ -1744,11 +1744,7 @@ AUDIO_CORE_RAM void playerEngine ::modCutoff(float value)
 }
 AUDIO_CORE_RAM void playerEngine ::modResonance(float value)
 {
-    const bool filterEnabled =
-      (mtProject.instrument[currentInstrument_idx].filterEnable == 1) ||
-      trackControlParameter[(int)controlType::performanceMode][(int)parameterList::filterEnable];
-
-    if (filterEnabled)
+    if (mtProject.instrument[currentInstrument_idx].filterEnable)
     {
         for (int channel = 0; channel < (int)filterPtr.size(); channel++)
         {
