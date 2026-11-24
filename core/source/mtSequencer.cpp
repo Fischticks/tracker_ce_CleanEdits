@@ -1781,11 +1781,12 @@ void Sequencer::switchRowStep(uint8_t row) // przełączamy stepy w zależności
         }
     }
 
-    // Track play mode is independent of the Performance screen/global mode lifecycle.
+    // Track play mode is track-owned; its Performance-specific length remains screen-mode scoped.
     if (isPerformanceTrack(row))
     {
         playMode = player.track[row].performancePlayMode;
-        trackLength = player.performance.trackLength[row];
+        if (player.performanceMode)
+            trackLength = player.performance.trackLength[row];
     }
 
     if (player.performance.patternLength > -1)
