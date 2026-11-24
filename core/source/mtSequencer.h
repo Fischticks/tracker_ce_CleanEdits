@@ -940,6 +940,14 @@ class Sequencer
                                  enFxValLabelAlign align);
 
     uint8_t getActualPos() { return player.track[0].actual_pos; }
+    uint16_t getPatternEditorPlayheadPosition()
+    {
+        // Preserve the existing position while stopped and during selection playback.
+        if (isStop() || isPlayingSelection())
+            return getActualPos();
+
+        return player.patternPosition;
+    }
     uint8_t getPatternLength() { return getActualPattern()->track[0].length + 1; }
 
     void alignToGlobalPos(uint8_t);

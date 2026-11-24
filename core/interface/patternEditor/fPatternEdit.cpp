@@ -945,7 +945,7 @@ void cPatternEditor::readPatternState()
     seq = sequencer.getPatternToUI();
 
     trackerPattern.patternLength = seq->track[0].length + 1;
-    trackerPattern.playheadPosition = sequencer.getActualPos();
+    trackerPattern.playheadPosition = sequencer.getPatternEditorPlayheadPosition();
 }
 
 uint8_t cPatternEditor::getStepFx()
