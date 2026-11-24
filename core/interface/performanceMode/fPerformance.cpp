@@ -13,6 +13,8 @@
 #include "performanceEngine.h"
 #include "util_math.h"
 
+#include <string.h>
+
 cPerformanceMode performanceMode;
 static cPerformanceMode* PM = &performanceMode;
 
@@ -312,6 +314,18 @@ void cPerformanceMode::shiftPerformRecall()
         performance.captureFxRecallState(recallFxRows, recallFxValues);
         recallBufferValid = true;
         turnOff(false, true);
+
+        // Pattern Length is a global FX, so turning off all tracks does not
+        // otherwise change its selected row. Show it as bypassed while the
+        // saved row/value remain safely stored in the recall buffer.
+        for (uint8_t slot = 0; slot < 12; slot++)
+        {
+            if (strcmp(performance.getSlotFxName(slot), "Pattern length") == 0)
+            {
+                performance.setSelectedRow(slot, 0);
+                break;
+            }
+        }
     }
     else if (recallBufferValid)
     {
