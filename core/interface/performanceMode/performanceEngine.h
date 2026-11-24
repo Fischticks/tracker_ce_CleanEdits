@@ -52,6 +52,8 @@ class cPerformEngine
     void pasteSlotFx(uint8_t slot);
 
     void loadSelectedValuesToTempValues();
+    void captureFxRecallState(uint8_t selectedRows[12], int16_t activeValues[12]) const;
+    void restoreFxRecallState(const uint8_t selectedRows[12], const int16_t activeValues[12]);
 
     const uint8_t getFxCount() { return fxCount; }
     const char* getSlotFxName(uint8_t slot);
