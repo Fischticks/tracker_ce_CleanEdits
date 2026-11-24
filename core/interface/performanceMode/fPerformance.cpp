@@ -112,6 +112,22 @@ void cPerformanceMode::start(uint32_t options)
         performance.readPerfData(mtConfig.general.performanceSource);
     }
 
+    // A pending Shift + Perform recall means Pattern Length was explicitly
+    // bypassed. Reapply that row state after readPerfData(), which rebinds the
+    // slot pointers to the selected Performance data source.
+    if (recallBufferValid)
+    {
+        for (uint8_t slot = 0; slot < 12; slot++)
+        {
+            if (strcmp(performance.getSlotFxName(slot), "Pattern length") == 0)
+            {
+                performance.resetSlotFx(slot);
+                performance.setSelectedRow(slot, 0);
+                break;
+            }
+        }
+    }
+
     // czyszczenie afektowania traków
     for (uint8_t track = 0; track < kPerformanceTracks; track++)
     {
@@ -315,13 +331,13 @@ void cPerformanceMode::shiftPerformRecall()
         recallBufferValid = true;
         turnOff(false, true);
 
-        // Pattern Length is a global FX, so turning off all tracks does not
-        // otherwise change its selected row. Show it as bypassed while the
-        // saved row/value remain safely stored in the recall buffer.
+        // turnOff(..., true) clears the live global FX. Also select bypass
+        // for Pattern Length; its original row/value remain in the recall buffer.
         for (uint8_t slot = 0; slot < 12; slot++)
         {
             if (strcmp(performance.getSlotFxName(slot), "Pattern length") == 0)
             {
+                performance.resetSlotFx(slot);
                 performance.setSelectedRow(slot, 0);
                 break;
             }
