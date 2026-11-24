@@ -158,6 +158,8 @@ class cPerformanceMode : public ModuleBase
     uint8_t dontClearPerformanceMode = 0;
     bool recallBufferValid = false;
     uint8_t recallTrackStates[kPerformanceTracks] = { 0 };
+    uint8_t recallFxRows[12] = { 0 };
+    int16_t recallFxValues[12] = { 0 };
     int16_t recallPatternLength = -1;
 
     //--------performance values
