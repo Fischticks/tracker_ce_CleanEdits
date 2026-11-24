@@ -3088,12 +3088,8 @@ AUDIO_CORE_FLASH void Sequencer::handleNoteOn(
                     strPattern::strTrack::strStep* step =
                       &currentPattern->track[trackIdx].step[entryStep];
 
-                    if (entryMicromove != -2 &&
-                        (!step->isNoteEmpty() || step->fx[0].type != 0 || step->fx[1].type != 0))
-                    {
-                        break; // Step Quantize never overwrites an occupied step; the cursor still advances
-                    }
-
+                    // Step Quantize controls placement only. Preserve ordinary manual note-entry
+                    // behavior when the snapped destination already contains a note or FX.
                     newFileManager.storePatternUndoRevision();
 
                     step->note = note;

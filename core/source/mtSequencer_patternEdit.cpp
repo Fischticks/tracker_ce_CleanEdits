@@ -1289,11 +1289,8 @@ void Sequencer::setSelectionNote(int16_t value)
         if (stepQuantizeTarget(sel->firstTrack, sel->firstStep, sqStep, mm))
         {
             sqMicromove = mm;
-            strPattern::strTrack::strStep* dest = &currentPattern->track[sel->firstTrack].step[sqStep];
-            if (!dest->isNoteEmpty() || dest->fx[0].type != 0 || dest->fx[1].type != 0)
-            {
-                return; // Step Quantize never overwrites an occupied step; the cursor still advances
-            }
+            // Step Quantize selects the note destination; ordinary note-entry overwrite behavior
+            // still applies when that destination already contains a note or FX.
             sel->firstStep = sel->lastStep = sqStep;
         }
     }

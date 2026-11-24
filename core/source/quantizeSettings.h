@@ -19,7 +19,7 @@ namespace quantizeSettings
 struct Values
 {
     bool noteOff = true;       // write Note Off markers while recording
-    bool quantize = true;      // quantize live-recorded notes
+    bool quantize = false;     // quantize live-recorded notes (default Off)
     bool stepQuantize = false; // place manually entered notes on the grid and advance by the grid
     uint8_t division = quantizeGrid::kDefaultDivision;
     uint8_t strength = quantizeGrid::kDefaultStrength; // 0..100
