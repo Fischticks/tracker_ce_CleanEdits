@@ -83,7 +83,9 @@ void cPerformanceMode::start(uint32_t options)
     // ustawienie trackow
     if (!dontClearPerformanceMode)
     {
-        if (!hasAnyPerformanceFxActive())
+        // Keep the configured FX rows while a Shift + Perform snapshot is
+        // waiting to be recalled; entering this screen must not erase that setup.
+        if (!hasAnyPerformanceFxActive() && !recallBufferValid)
             performance.resetSelectedRows();
         tracksPage = 0;
 
