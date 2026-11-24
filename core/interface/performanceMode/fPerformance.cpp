@@ -309,18 +309,24 @@ void cPerformanceMode::shiftPerformRecall()
         for (uint8_t track = 0; track < kPerformanceTracks; track++)
             recallTrackStates[track] = performance.getTrackState(track);
         recallPatternLength = sequencer.ptrPlayer->performance.patternLength;
+        performance.captureFxRecallState(recallFxRows, recallFxValues);
         recallBufferValid = true;
         turnOff(false, true);
     }
     else if (recallBufferValid)
     {
+        // Restore the selected FX rows and their live values before re-enabling tracks.
+        performance.restoreFxRecallState(recallFxRows, recallFxValues);
+
+        // The sequencer's saved Pattern Length is authoritative for playback timing.
+        if (recallPatternLength >= 0)
+            sequencer.setPerformancePatternLength(recallPatternLength + 1);
+
         for (uint8_t track = 0; track < kPerformanceTracks; track++)
         {
             if (recallTrackStates[track])
                 performance.toggleTrackState(track);
         }
-        if (recallPatternLength >= 0)
-            sequencer.setPerformancePatternLength(recallPatternLength + 1);
         recallBufferValid = false;
         recallPatternLength = -1;
         performance.markRetainedFxActive();
@@ -339,6 +345,11 @@ void cPerformanceMode::shiftPerformRecall()
         sequencer.enterPerformanceMode();
 
     refreshTrackState = 1;
+    if (mtInterface.isPerformanceModeScreenActive())
+    {
+        showAllPerformanceValues();
+        lightUpPadBoard();
+    }
 }
 
 void cPerformanceMode::resetForProjectReplacement()
