@@ -330,6 +330,12 @@ void cPerformanceMode::shiftPerformRecall()
         performance.markRetainedFxActive();
     }
 
+    // If the shortcut is used while the Performance screen remains open,
+    // restore sequencer Performance Mode along with the saved FX configuration.
+    if (mtInterface.isPerformanceModeScreenActive() && !sequencer.isPerformanceMode() &&
+        hasAnyPerformanceFxActive())
+        sequencer.enterPerformanceMode();
+
     refreshTrackState = 1;
 }
 

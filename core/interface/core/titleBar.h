@@ -20,7 +20,6 @@ class TitleBar
 
     void setTitle(const char* text);
     void setRightLabel(const char* text);
-    void setFxLatchEnabled(bool enabled);
     void showCurrentInstrumentOnRightLabel();
     void setBatteryValue(int valuePercent, bool charging);
 
@@ -45,8 +44,6 @@ class TitleBar
     hControl bar = -1;
     hControl battery = -1;
     hControl performBox = -1;
-    hControl fxLatchLabel = -1;
-    bool fxLatchEnabled = false;
 
     strLabelData barLabelData;
 
