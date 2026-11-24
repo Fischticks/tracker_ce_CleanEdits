@@ -364,7 +364,7 @@ void handleJackControlChange(byte channel, byte number, byte value)
 
     if ((channel == mtConfig.midi.ccInChannel) || (mtConfig.midi.ccInChannel == ALL_CC_CHANNELS))
     {
-        if (mtInterface.isPerformanceModeScreenActive() || performanceMode.isFxLatchEnabled())
+        if (mtInterface.isPerformanceModeScreenActive() || performanceMode.hasAnyPerformanceFxActive())
             peformanceModeOnMidiCC(number, value);
 
         changeMixerOnMidiCC(number, value);
@@ -381,7 +381,7 @@ void handleUSBControlChange(byte channel, byte number, byte value)
 
     if ((channel == mtConfig.midi.ccInChannel) || (mtConfig.midi.ccInChannel == ALL_CC_CHANNELS))
     {
-        if (mtInterface.isPerformanceModeScreenActive() || performanceMode.isFxLatchEnabled())
+        if (mtInterface.isPerformanceModeScreenActive() || performanceMode.hasAnyPerformanceFxActive())
             peformanceModeOnMidiCC(number, value);
 
         changeMixerOnMidiCC(number, value);

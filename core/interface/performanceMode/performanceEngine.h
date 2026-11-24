@@ -40,6 +40,7 @@ class cPerformEngine
     ~cPerformEngine() {}
 
     bool turnOff(bool preserveFx = false);
+    void markRetainedFxActive() { retainedFxActive = true; }
 
     void forceSaveConfig();
 

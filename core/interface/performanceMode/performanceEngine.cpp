@@ -8,6 +8,7 @@
 #include "mtSequencer.h"
 
 #include "performanceFx.h"
+#include "performanceMode.h"
 
 #include "performanceEngine.h"
 
@@ -346,6 +347,7 @@ void cPerformEngine::loadGlobalFxValue(int fxIdx, int value)
 {
     if (fxIdx > 0)
     {
+        performanceMode.onManualGlobalFxChange(value);
         fxList[fxIdx]->setFunct(0, value);
     }
 }

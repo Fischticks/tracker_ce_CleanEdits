@@ -83,11 +83,14 @@ class cPerformanceMode : public ModuleBase
 
     void setPerformanceFxes();
     void lightUpPadBoard();
-    bool turnOff(bool fromAudioCallback = false);
+    bool turnOff(bool fromAudioCallback = false, bool forceClearFx = false);
     void turnOffAtEndOfPattern();
-    void toggleFxLatch();
-    bool isFxLatchEnabled() const { return fxLatchEnabled; }
-    void updateLatchedFxCC();
+    bool hasAnyTrackOptedIn() const;
+    bool hasAnyPerformanceFxActive() const;
+    void shiftPerformRecall();
+    void onManualTrackOptInChange();
+    void onManualGlobalFxChange(int value);
+    void updateRetainedFxCC();
     void resetForProjectReplacement();
     void refreshFxCC(bool updateDisplay);
     bool canPerformanceModeContinueAfterSwitchingTo(uint8_t button);
@@ -153,7 +156,9 @@ class cPerformanceMode : public ModuleBase
     uint8_t tracksPage = 0;
 
     uint8_t dontClearPerformanceMode = 0;
-    bool fxLatchEnabled = false;
+    bool recallBufferValid = false;
+    uint8_t recallTrackStates[kPerformanceTracks] = { 0 };
+    int16_t recallPatternLength = -1;
 
     //--------performance values
     // gui

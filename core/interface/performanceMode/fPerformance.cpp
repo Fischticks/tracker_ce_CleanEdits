@@ -1,5 +1,4 @@
 #include "core/interface.h"
-#include "core/titleBar.h"
 #include "core/interfaceMenuPopup.h"
 #include "core/interfacePopups.h"
 #include "fileManager.h"
@@ -84,7 +83,7 @@ void cPerformanceMode::start(uint32_t options)
     // ustawienie trackow
     if (!dontClearPerformanceMode)
     {
-        if (!fxLatchEnabled)
+        if (!hasAnyPerformanceFxActive())
             performance.resetSelectedRows();
         tracksPage = 0;
 
@@ -112,12 +111,12 @@ void cPerformanceMode::start(uint32_t options)
     // czyszczenie afektowania traków
     for (uint8_t track = 0; track < kPerformanceTracks; track++)
     {
-        if (!dontClearPerformanceMode && !fxLatchEnabled)
+        if (!dontClearPerformanceMode && !hasAnyPerformanceFxActive())
             performance.setTrackState(track, 0); // ustaw na 0
     }
 
     // prezepisanie aktualnie zaznaczonych wartosci do tablicy wartosci chwilowych
-    if (!fxLatchEnabled)
+    if (!hasAnyPerformanceFxActive())
         performance.loadSelectedValuesToTempValues();
 
     if (dontClearPerformanceMode)
@@ -240,10 +239,10 @@ void cPerformanceMode::setProjectSaveFlags()
     //	fileManager.projectChangeFlag = 1;
 }
 
-bool cPerformanceMode::turnOff(bool fromAudioCallback)
+bool cPerformanceMode::turnOff(bool fromAudioCallback, bool forceClearFx)
 {
     const bool wasPerformanceMode = sequencer.isPerformanceMode();
-    const bool preserveFx = fxLatchEnabled;
+    const bool preserveFx = !forceClearFx && hasAnyPerformanceFxActive();
     performance.turnOff(preserveFx);
     if (preserveFx)
         engine.performanceModeEndPositionLfoRateAll();
@@ -268,10 +267,70 @@ bool cPerformanceMode::turnOff(bool fromAudioCallback)
     return wasPerformanceMode;
 }
 
-void cPerformanceMode::toggleFxLatch()
+bool cPerformanceMode::hasAnyTrackOptedIn() const
 {
-    fxLatchEnabled = !fxLatchEnabled;
-    ::titleBar.setFxLatchEnabled(fxLatchEnabled);
+    for (uint8_t track = 0; track < kPerformanceTracks; track++)
+    {
+        if (performance.getTrackState(track))
+            return true;
+    }
+    return false;
+}
+
+bool cPerformanceMode::hasAnyPerformanceFxActive() const
+{
+    return hasAnyTrackOptedIn() || sequencer.ptrPlayer->performance.patternLength >= 0;
+}
+
+void cPerformanceMode::onManualTrackOptInChange()
+{
+    if (!hasAnyPerformanceFxActive())
+    {
+        recallBufferValid = false;
+        recallPatternLength = -1;
+    }
+}
+
+void cPerformanceMode::onManualGlobalFxChange(int value)
+{
+    if (value > 0 && !hasAnyPerformanceFxActive())
+    {
+        recallBufferValid = false;
+        recallPatternLength = -1;
+    }
+}
+
+void cPerformanceMode::shiftPerformRecall()
+{
+    if (hasAnyPerformanceFxActive())
+    {
+        for (uint8_t track = 0; track < kPerformanceTracks; track++)
+            recallTrackStates[track] = performance.getTrackState(track);
+        recallPatternLength = sequencer.ptrPlayer->performance.patternLength;
+        recallBufferValid = true;
+        turnOff(false, true);
+    }
+    else if (recallBufferValid)
+    {
+        for (uint8_t track = 0; track < kPerformanceTracks; track++)
+        {
+            if (recallTrackStates[track])
+                performance.toggleTrackState(track);
+        }
+        if (recallPatternLength >= 0)
+            sequencer.setPerformancePatternLength(recallPatternLength + 1);
+        recallBufferValid = false;
+        recallPatternLength = -1;
+        performance.markRetainedFxActive();
+    }
+    else
+    {
+        for (uint8_t track = 0; track < kPerformanceTracks; track++)
+            performance.toggleTrackState(track);
+        performance.markRetainedFxActive();
+    }
+
+    refreshTrackState = 1;
 }
 
 void cPerformanceMode::resetForProjectReplacement()
@@ -280,7 +339,10 @@ void cPerformanceMode::resetForProjectReplacement()
     sequencer.discardPerformanceModeForProjectReplacement();
     if (wasPerformanceMode)
         engine.performanceModeEndAll();
-    fxLatchEnabled = false;
+    recallBufferValid = false;
+    recallPatternLength = -1;
+    for (uint8_t track = 0; track < kPerformanceTracks; track++)
+        recallTrackStates[track] = 0;
     dontClearPerformanceMode = 0;
     performance.turnOff(false);
 
@@ -295,7 +357,6 @@ void cPerformanceMode::resetForProjectReplacement()
 
     refreshTrackPattern = 1;
     refreshTrackState = 1;
-    ::titleBar.setFxLatchEnabled(false);
 }
 
 void cPerformanceMode::turnOffAtEndOfPattern()
@@ -389,9 +450,9 @@ void cPerformanceMode::refreshAllCC()
     display.synchronizeRefresh();
 }
 
-void cPerformanceMode::updateLatchedFxCC()
+void cPerformanceMode::updateRetainedFxCC()
 {
-    if (!fxLatchEnabled || mtInterface.isPerformanceModeScreenActive())
+    if (!hasAnyPerformanceFxActive() || mtInterface.isPerformanceModeScreenActive())
         return;
     refreshFxCC(false);
 }
@@ -727,12 +788,6 @@ static void functSwitchModule(uint8_t button)
 
 static void functSwitchTracksPage()
 {
-    if (PM->buttons->isButtonPressed(interfaceButtonShift))
-    {
-        PM->toggleFxLatch();
-        return;
-    }
-
     for (uint8_t i = 0; i < kPerformanceTracks; i++)
     {
         PM->trackPatternChange[i] = 0;
@@ -807,6 +862,7 @@ static void functActionButton(uint8_t button, uint8_t state)
             }
             else
             {
+                PM->onManualTrackOptInChange();
                 performance.toggleTrackState(track);
 
                 PM->refreshTrackState = 1;
@@ -961,7 +1017,7 @@ void peformanceModeOnMidiCC(uint8_t cc_idx, uint8_t cc_value)
     constexpr uint8_t PERFORMANCE_MODE_CC_FOR_TRACK_RANGE_MAX = 48;
 
     const bool performanceScreenActive = mtInterface.isPerformanceModeScreenActive();
-    if (!performanceScreenActive && !PM->isFxLatchEnabled())
+    if (!performanceScreenActive && !PM->hasAnyPerformanceFxActive())
         return;
 
     if ((cc_idx <= PERFORMANCE_MODE_CC_FOR_SLOT_RANGE_MAX) &&

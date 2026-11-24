@@ -3414,7 +3414,6 @@ void Sequencer::exitPerformanceMode()
 {
     const bool restoredAtBoundary = player.performanceExitBoundarySwapCompleted;
     player.performanceMode = 0;
-    player.performance.patternLength = -1;
     player.performanceExitBoundaryPending = false;
     player.performanceExitBoundarySwapCompleted = false;
     for (uint8_t track = 0; track < kPerformanceTracks; track++)
