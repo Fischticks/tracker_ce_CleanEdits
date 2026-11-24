@@ -364,7 +364,7 @@ AUDIO_CORE_RAM void Sequencer::play_microStep(int row)
                 player.sequencialSwitch_loaded = true;
             }
         }
-        else if (((playerRow.actual_pos == patternRow.length)) && player.songMode)
+        else if (isLastStepInPattern && player.songMode)
         {
             loadNextPattern(newFileManager.getNextSongPattern());
         }
