@@ -75,6 +75,13 @@ The default custom firmware build now includes all four completed optional featu
 
 ### Changed & Fixed
 
+* **Performance FX & Track Play Modes (All 3 Devices)**:
+  * **Persistent Per-Track FX Opt-In**: Performance FX opt-in now belongs to each track and remains active across screen navigation and pattern changes. Pattern Play Mode is likewise track-owned; Performance-specific track length remains scoped to the Performance screen. Pattern Length is the only independently active global Performance FX.
+  * **Global Shift + Perform Snapshot / Recall**: Shift + Perform works from any screen and in either button order. It snapshots every track's opt-in state and Pattern Length before disabling all FX; the next use restores that configuration. With no saved snapshot, it opts all tracks in with Pattern Length disabled. Starting a new configuration manually while all FX are off invalidates the suspended snapshot.
+  * **Filter LFO with Performance Filter Ownership**: A Performance FX filter can own the filter even when the instrument filter is disabled, and cutoff envelope / Filter LFO modulation continues to work on that active filter.
+  * **Song Playback with Non-Forward Track Play Modes**: Fixed song playback stopping at pattern boundaries when tracks use Backward, Random, or Custom Performance Play Modes. Song pattern preloading now follows the absolute pattern-cycle position rather than the mode-dependent displayed step position.
+  * See [`docs/performance_fx_and_play_modes.md`](docs/performance_fx_and_play_modes.md).
+
 * **Faster UI Rendering & System Responsiveness (All 3 Devices)**:
 	* **~3×–4× Faster Heavy Screen Updates**: Rebuilt the display engine so screens are composed directly on the main processor and only changed regions are sent to the display. Fast Pattern Editor scrolling, Song mode navigation, and switching screens feel **~3×–4× faster** without partial intermediate redraws.
 	* **~5×–10× Lower Display CPU Overhead (Tracker+ & Tracker Mini) / ~3×–5× Lower (Original Tracker)**: Display transfers on Tracker+ and Tracker Mini now run in the background via hardware DMA (and idle screens no longer poll the display bus at all), freeing CPU headroom for tighter pad/encoder response, MIDI timing, and SD sample streaming.
