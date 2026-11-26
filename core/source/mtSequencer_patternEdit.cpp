@@ -1203,6 +1203,24 @@ void Sequencer::setSelectionInstrument(int16_t value)
     if (!isSelectionCorrect(sel))
         return;
 
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    cancelStepQuantizeAdvance();
+    int8_t stepQuantizedMicromove = -2; // -2: not Step Quantized
+    if (isSingleSel)
+    {
+        uint8_t quantizedStep;
+        int8_t quantizedMicromove;
+        if (stepQuantizeTarget(sel->firstTrack,
+                               sel->firstStep,
+                               quantizedStep,
+                               quantizedMicromove))
+        {
+            stepQuantizedMicromove = quantizedMicromove;
+            sel->firstStep = sel->lastStep = quantizedStep;
+        }
+    }
+#endif
+
     newFileManager.storePatternUndoRevision();
 
     bool somethingWasChanged = false;
@@ -1223,6 +1241,13 @@ void Sequencer::setSelectionInstrument(int16_t value)
                     if (step->isNoteEmpty())
                     {
                         step->note = STEP_NOTE_DEFAULT;
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+                        // A sample instrument creates a new default note here; apply its grid offset.
+                        if (stepQuantizedMicromove != -2)
+                        {
+                            step->micromove = stepQuantizedMicromove;
+                        }
+#endif
                         somethingWasChanged = true;
                     }
 
