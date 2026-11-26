@@ -2912,10 +2912,32 @@ AUDIO_CORE_FLASH void Sequencer::handleNoteOn(
             bool quantApplied = false;
             int8_t quantMicromove = -1;
             uint8_t quantFwd = 0;
-            if (!isAnticipatedBeat1 && quantizeSettings::values.quantize)
+            bool stepQuantizedInstrument = false;
+            int8_t stepQuantizedInstrumentMicromove = -1;
+
+            // When Step Quantize is active, instrument-pad recording follows its full-strength grid.
+            // Otherwise, the existing Live Record Quantize behavior remains unchanged.
+            const bool useStepQuantizeForInstrument =
+              padInstrumentEdit && !isAnticipatedBeat1 && quantizeSettings::effectiveStepQuantize();
+            if (!isAnticipatedBeat1 && quantizeSettings::values.quantize &&
+                !useStepQuantizeForInstrument)
             {
                 quantizeNoteOn(tr, destinationStep, quantMicromove, quantFwd);
                 quantApplied = true;
+            }
+
+            if (useStepQuantizeForInstrument)
+            {
+                uint8_t quantizedDestination = destinationStep;
+                if (stepQuantizeTarget(tr,
+                                       destinationStep,
+                                       quantizedDestination,
+                                       stepQuantizedInstrumentMicromove,
+                                       true))
+                {
+                    destinationStep = quantizedDestination;
+                    stepQuantizedInstrument = true;
+                }
             }
 #endif
 
