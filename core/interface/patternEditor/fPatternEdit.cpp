@@ -4894,7 +4894,7 @@ static void functPads(uint8_t pad, uint8_t state, int16_t velo)
                           PTE->isSelectionOrCursorInMidiTracks()
                             ? MIDI_INSTRUMENTS_START_IDX + (pad % kMidiInstrumentsCount)
                             : pad;
-                        sequencer.setSelectionInstrument(instrumentToSet);
+                        sequencer.setSelectionInstrument(instrumentToSet, true);
                     }
                 }
                 break;
