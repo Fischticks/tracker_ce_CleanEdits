@@ -2909,16 +2909,6 @@ AUDIO_CORE_FLASH void Sequencer::handleNoteOn(
             }
         }
 
-#ifdef MOD_SHIFT_PATTERN_QUANTIZE
-        // Clear stale editor state for this live event. Only the first eligible armed track may
-        // establish the cursor's pending advance; other armed tracks still quantize their own writes.
-        bool stepQuantizeAdvanceCaptured = false;
-        if (padInstrumentEdit && !isAnticipatedBeat1 && quantizeSettings::effectiveStepQuantize())
-        {
-            cancelStepQuantizeAdvance();
-        }
-#endif
-
         for (int tr = startTrack; tr < endTrack; tr++)
         {
             uint8_t destinationStep = isAnticipatedBeat1 ? 0 : getDestRecordingStep(tr, !recMicrotiming());
@@ -2926,34 +2916,13 @@ AUDIO_CORE_FLASH void Sequencer::handleNoteOn(
             bool quantApplied = false;
             int8_t quantMicromove = -1;
             uint8_t quantFwd = 0;
-            bool stepQuantizedInstrument = false;
-            int8_t stepQuantizedInstrumentMicromove = -1;
 
-            // When Step Quantize is active, instrument-pad recording follows its full-strength grid.
-            // Otherwise, the existing Live Record Quantize behavior remains unchanged.
-            const bool useStepQuantizeForInstrument =
-              padInstrumentEdit && !isAnticipatedBeat1 && quantizeSettings::effectiveStepQuantize();
-            if (!isAnticipatedBeat1 && quantizeSettings::values.quantize &&
-                !useStepQuantizeForInstrument)
+            // Instrument-pad recording creates a note, so it follows the same Live Record Quantize
+            // path (including Strength) as every other realtime note-on event.
+            if (!isAnticipatedBeat1 && quantizeSettings::values.quantize)
             {
                 quantizeNoteOn(tr, destinationStep, quantMicromove, quantFwd);
                 quantApplied = true;
-            }
-
-            if (useStepQuantizeForInstrument && isRecArmedOnTrack(tr))
-            {
-                uint8_t quantizedDestination = destinationStep;
-                if (stepQuantizeTarget(tr,
-                                       destinationStep,
-                                       quantizedDestination,
-                                       stepQuantizedInstrumentMicromove,
-                                       true,
-                                       !stepQuantizeAdvanceCaptured))
-                {
-                    destinationStep = quantizedDestination;
-                    stepQuantizedInstrument = true;
-                    stepQuantizeAdvanceCaptured = true;
-                }
             }
 #endif
 
@@ -3016,11 +2985,7 @@ AUDIO_CORE_FLASH void Sequencer::handleNoteOn(
                     player.track[tr].recNoteOnStepIdx = destinationStep;
 #ifdef MOD_SHIFT_PATTERN_QUANTIZE
                     player.track[tr].recQuantFwdSteps = quantApplied ? quantFwd : 0;
-                    if (stepQuantizedInstrument)
-                    {
-                        step->micromove = stepQuantizedInstrumentMicromove;
-                    }
-                    else if (quantApplied)
+                    if (quantApplied)
                     {
                         step->micromove = quantMicromove;
                     }
