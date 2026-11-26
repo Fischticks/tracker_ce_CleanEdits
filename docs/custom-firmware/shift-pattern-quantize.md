@@ -8,7 +8,8 @@ Works with or without `MOD_PATTERN_BPM`.
 - Earlier revision `99791d5`: compiled and linked without errors (Original, Tracker+, Mini with the flag on; Tracker+ with the flag
   combinations listed in PR #7) and the host tests passed. This predates the changes below.
 - Later commits (enabled by default, the Step Quantize stale-position fix, the cursor-invalidation hooks and the undo/redo
-  invalidation) have **not been compiled or tested by Claude**; building and testing them is pending maintainer review.
+  invalidation) were not compiled or tested by Claude. The current Step Jump cursor-advancement follow-up adds a host-testable
+  cursor projection helper and regression cases, but this revision has **not yet been compiled or had its host tests run**.
 - Never tested on hardware or in an emulator.
 
 ## Source files
@@ -69,27 +70,34 @@ Note Off and Quantize stay editable. Labels are abbreviated because the column i
   discards the write, as in the base firmware's recording path.
 * **Note Off:** gates only the creation of Note Off markers; release/cleanup still run. Markers are not grid-quantized. A guard
   prevents a marker landing before a note-on that Quantize moved forward.
-* **Step Quantize (manual note entry):** the note goes to the grid position nearest the cursor (ties forward) at full strength
-  (Strength applies to live recording only); the cursor then advances to the step holding the next grid position instead of by
-  Step Jump (wraps at the pattern end). The exact next position is remembered so that grids not aligned to steps stay exact.
-  Covers pad/keyboard entry in the editor, the note popup commit and MIDI-keyboard entry in edit mode (chords use the same
-  target on every track). Non-note entry (instrument, FX, volume, paste) is unchanged. An occupied target step is never
-  overwritten (the note is discarded, the cursor still advances).
+* **Step Quantize (note placement and cursor advancement):** manual notes are placed at the grid position nearest the cursor
+  (ties forward) at full strength (Strength applies to live recording only). The exact next grid position is remembered so
+  grids not aligned to physical steps stay exact. Note placement covers pad/keyboard entry in the editor, note-popup commit
+  and MIDI-keyboard entry in edit mode (chords use the same target on every track). At the quantized destination, ordinary
+  note overwrite behavior applies.
+* **Step Quantize (Step Jump precedence):** whenever an editor action would normally advance the cursor by Step Jump, an
+  effective Step Quantize grid determines the next cursor position instead. If note entry already created a pending grid
+  advance, that exact advance is consumed; otherwise the next grid position is calculated from the current cursor. This
+  covers Delete (for every edit parameter), Mini Middle, pad-based note/instrument/FX/volume/micromove edits, one-line
+  parallel-selection advancement, incoming USB/JACK MIDI note-off cursor advancement, and paste. For paste, the grid replaces only the Step Jump component; the pasted
+  selection-height offset is added after the grid-selected position. Step Quantize Off or Bypass preserves ordinary Step Jump.
+  Non-note data placement and pasted content are not quantized; only their cursor advancement is governed by the grid.
 * **Bypass:** effective-value override only (`quantizeSettings::effective*`); stored values are never rewritten.
 * **Persistence:** none. Runtime state, reset on project load/reload and at power-up. No file-format change.
 * Existing pattern data, playback timing, BPM, pattern length and step duration are untouched.
 
 ## Deviations / decisions to review
 
-* Occupied-destination rule is "discard the incoming write" (Addendum 1) for both recording and Step Quantize.
+* Live recording retains its occupied-destination discard behavior. Manual Step Quantize note entry follows ordinary overwrite behavior at the snapped destination (PR #17).
 * Labels abbreviated ("Step Quant", "Division", "Strength", "Quarter Len") for the 100 px column.
-* Step Quantize never overwrites an existing note, so retyping a note on an occupied target step does nothing under Step Quantize.
 * Wrap-around of the category list is left as in Pattern Settings (the category button wraps; Up/Down clamp).
 
 ## Tests
 
 * Host (`g++ -std=c++17 -Wall -Icore/source tests/host/test_quantizeGrid.cpp` and `test_stepQuantize.cpp`): grid math and the
-  Step Quantize cursor chain over all divisions, Q = 4..16 and many pattern lengths.
+  Step Quantize cursor chain over all divisions, Q = 4..16 and many pattern lengths. The latter also tests the shared
+  grid-step-to-cursor projection, including paste-height offsets and pattern wrapping. The editor call paths themselves are
+  not linked into this host test.
 * Firmware builds: see the PR description (compile/link only).
 * **Not performed:** hardware, emulator, UI rendering, real MIDI/pad recording.
 
