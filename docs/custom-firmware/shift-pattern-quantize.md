@@ -105,9 +105,9 @@ Note Off and Quantize stay editable. Labels are abbreviated because the column i
 
 ## Tests
 
-* Host (`g++ -std=c++17 -Wall -Icore/source tests/host/test_quantizeGrid.cpp` and `test_stepQuantize.cpp`): grid math and the
-  Step Quantize cursor chain over all divisions, Q = 4..16 and many pattern lengths.
-* Firmware builds: see the PR description (compile/link only).
+* Host regression tests cover grid math, the Step Quantize cursor chain, and Live Record Quantize strength projection.
+  The host test executables have **not yet been run** for this combined integration revision.
+* Firmware build for the combined integration branch is in progress; see the PR checks for its current result.
 * **Not performed:** hardware, emulator, UI rendering, real MIDI/pad recording.
 
 ## Limitations
