@@ -113,6 +113,13 @@ inline int32_t stepOf(int32_t p)
 {
     return p / kTicksPerStep;
 }
+inline int32_t cursorStepAfterGridAdvance(int32_t nextGridStep, int32_t extraSteps, int32_t patternSteps)
+{
+    if (patternSteps <= 0)
+        return 0;
+    int32_t step = (nextGridStep + extraSteps) % patternSteps;
+    return step < 0 ? step + patternSteps : step;
+}
 inline int32_t offsetOf(int32_t p)
 {
     return p % kTicksPerStep;
