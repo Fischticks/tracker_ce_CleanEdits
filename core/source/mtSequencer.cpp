@@ -2705,11 +2705,14 @@ void Sequencer::quantizeNoteOn(uint8_t track, uint8_t& destStep, int8_t& micromo
                  : 0;
 }
 
-// Step Quantize: where a note entered with the cursor on cursorStep goes. The first note snaps to the grid position
-// nearest to the cursor step (ties forward); after a note the cursor stands on the step that holds the next grid
-// position, whose exact position is remembered in stepQuant (the integer cursor alone cannot tell, e.g. 1/16
-// with Quarter Note Length 5). Full strength; Strength only applies to live recording.
-bool Sequencer::stepQuantizeTarget(uint8_t track, uint8_t cursorStep, uint8_t& destStep, int8_t& micromove)
+// Step Quantize: manual note/instrument entry snaps to the grid position nearest the cursor step (ties forward).
+// The exact next grid position is remembered in stepQuant so divisions not aligned to physical steps remain exact.
+// Step Quantize uses full strength; the Strength control applies to ordinary Live Record Quantize.
+bool Sequencer::stepQuantizeTarget(uint8_t track,
+                                   uint8_t cursorStep,
+                                   uint8_t& destStep,
+                                   int8_t& micromove,
+                                   bool rememberAdvance)
 {
     if (!quantizeSettings::effectiveStepQuantize() || !isEditMode())
     {
@@ -2731,10 +2734,13 @@ bool Sequencer::stepQuantizeTarget(uint8_t track, uint8_t cursorStep, uint8_t& d
 
     destStep = (uint8_t)quantizeGrid::stepOf(p);
     micromove = quantizeGrid::micromoveForOffset(quantizeGrid::offsetOf(p));
-    stepQuant.nextPos = quantizeGrid::next(p, interval, total);
-    stepQuant.interval = interval;
-    stepQuant.total = total;
-    stepQuant.pending = true;
+    if (rememberAdvance)
+    {
+        stepQuant.nextPos = quantizeGrid::next(p, interval, total);
+        stepQuant.interval = interval;
+        stepQuant.total = total;
+        stepQuant.pending = true;
+    }
     return true;
 }
 
@@ -2896,6 +2902,9 @@ AUDIO_CORE_FLASH void Sequencer::handleNoteOn(
             bool quantApplied = false;
             int8_t quantMicromove = -1;
             uint8_t quantFwd = 0;
+
+            // Instrument-pad recording creates a note, so it follows the same Live Record Quantize
+            // path (including Strength) as every other realtime note-on event.
             if (!isAnticipatedBeat1 && quantizeSettings::values.quantize)
             {
                 quantizeNoteOn(tr, destinationStep, quantMicromove, quantFwd);

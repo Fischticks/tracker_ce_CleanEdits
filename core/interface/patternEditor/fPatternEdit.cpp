@@ -999,26 +999,54 @@ void cPatternEditor::focusOnActual()
       clamp<int8_t>(trackerPattern.firstVisibleTrack, 0, kAllTracks - columnCounts);
 }
 
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+static bool takeOrCreateStepQuantizeAdvance(uint8_t& cursorStep)
+{
+    if (sequencer.takeStepQuantizeAdvance(cursorStep))
+    {
+        return true;
+    }
+
+    // Populate the sequencer's pending grid advance even when this action did not place a note.
+    uint8_t targetStep = 0;
+    int8_t targetMicromove = -1;
+    if (!sequencer.stepQuantizeTarget(PTE->trackerPattern.actualTrack,
+                                      PTE->trackerPattern.actualStep,
+                                      targetStep,
+                                      targetMicromove))
+    {
+        return false;
+    }
+
+    return sequencer.takeStepQuantizeAdvance(cursorStep);
+}
+#endif
+
 void cPatternEditor::moveCursorByStep()
 {
+    // The shared path also creates a grid advance when this action did not place a note.
+    moveCursorByStep(0);
+}
+
+void cPatternEditor::moveCursorByStep(uint8_t val, bool useStepQuantize)
+{
+#ifndef MOD_SHIFT_PATTERN_QUANTIZE
+    (void)useStepQuantize;
+#endif
 #ifdef MOD_SHIFT_PATTERN_QUANTIZE
-    // Step Quantize: after a quantized note the cursor goes to the next grid position instead of by Step Jump.
     uint8_t gridStep;
-    if (sequencer.takeStepQuantizeAdvance(gridStep))
+    if (useStepQuantize && takeOrCreateStepQuantizeAdvance(gridStep))
     {
-        trackerPattern.actualStep = gridStep;
+        // This path is reserved for ordinary Step Jump-based editor actions; paste opts out.
+        const int16_t patternLength = sequencer.getPatternToUI()->track[0].length;
+        trackerPattern.actualStep = static_cast<uint8_t>(
+          quantizeGrid::cursorStepAfterGridAdvance(gridStep, patternLength + 1));
+
         PTE->trackerPattern.selectState = 1;
         PTE->trackerPattern.selectColumn = 0;
         PTE->isSelectingNow = 0;
         return;
     }
-#endif
-    moveCursorByStep(0);
-}
-
-void cPatternEditor::moveCursorByStep(uint8_t val)
-{
-#ifdef MOD_SHIFT_PATTERN_QUANTIZE
     sequencer.invalidateStepQuantizePosition();
 #endif
     if (mtProject.values.patternEditStep + val <= 0)
@@ -1054,9 +1082,11 @@ void cPatternEditor::moveCursorByStepParallel()
 
 #ifdef MOD_SHIFT_PATTERN_QUANTIZE
     uint8_t gridStep;
-    if (sequencer.takeStepQuantizeAdvance(gridStep))
+    if (takeOrCreateStepQuantizeAdvance(gridStep))
     {
-        trackerPattern.actualStep = gridStep;
+        const int16_t patternLength = sequencer.getPatternToUI()->track[0].length;
+        trackerPattern.actualStep = static_cast<uint8_t>(
+          quantizeGrid::cursorStepAfterGridAdvance(gridStep, patternLength + 1));
         PTE->trackerPattern.selectStartStep = trackerPattern.actualStep;
         PTE->trackerPattern.selectEndStep = trackerPattern.actualStep;
         PTE->trackerPattern.selectState = 2;
@@ -3204,7 +3234,8 @@ static void functCopyPaste(uint8_t state)
             {
                 sendPasteSelection();
                 sequencer.pasteFromBuffer(getSelectedElement());
-                PTE->moveCursorByStep(sequencer.getCopySelectionHeight() - 1);
+                // Paste keeps its stock Step Jump + selection-height cursor advancement.
+                PTE->moveCursorByStep(sequencer.getCopySelectionHeight() - 1, false);
 
                 newFileManager.setActualPatternStructChanged();
             }

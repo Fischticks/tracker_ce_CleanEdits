@@ -86,6 +86,59 @@ int main()
         CHECK(!r.usableAt(stepOf(p) - 1, i8t, total));
     }
 
+    // Live Record Quantize applies the configured Strength toward the nearest grid point.
+    // Instrument-pad recording uses this same shared path as ordinary realtime note-on events.
+    for (int q = kQuarterMin; q <= kQuarterMax; q++)
+    {
+        for (int d = 0; d < divisionCount; d++)
+        {
+            const int32_t interval = intervalTicks(d, q);
+            const int patternLengths[] = {1, 4, 16, 28, 30, 64, 100, 128};
+            for (int len : patternLengths)
+            {
+                const int32_t total = len * kTicksPerStep;
+                for (int32_t physical = 0; physical < total; physical++)
+                {
+                    const Nearest target = nearest(physical, interval, total);
+                    const int32_t atZero = applyStrength(physical, target.target, 0, total);
+                    const int32_t atHalf = applyStrength(physical, target.target, 50, total);
+                    const int32_t atFull = applyStrength(physical, target.target, 100, total);
+                    CHECK(atZero == physical);
+                    CHECK(atZero >= 0 && atZero < total);
+                    CHECK(atHalf >= 0 && atHalf < total);
+                    CHECK(atFull == target.wrapped);
+                    CHECK(atFull >= 0 && atFull < total);
+                }
+            }
+        }
+    }
+    // Exact pattern-end targets wrap to step zero and retain their forward-boundary identity.
+    {
+        const int32_t total = 16 * kTicksPerStep;
+        const int32_t interval = intervalTicks(div1_16, 4);
+        const Nearest target = nearest(total - 1, interval, total);
+        CHECK(target.target == total);
+        CHECK(target.wrapped == 0);
+        CHECK(stepOf(target.wrapped) == 0);
+        CHECK(micromoveForOffset(offsetOf(target.wrapped)) == -1);
+    }
+
+    // Step Quantize cursor projection for actions that normally use Step Jump.
+    // Paste is deliberately excluded and retains its stock cursor advancement.
+    {
+        for (int patternSteps = 1; patternSteps <= 128; patternSteps++)
+        {
+            for (int gridStep = 0; gridStep < patternSteps; gridStep++)
+            {
+                CHECK(cursorStepAfterGridAdvance(gridStep, patternSteps) == gridStep);
+            }
+        }
+        CHECK(cursorStepAfterGridAdvance(7, 0) == 0);
+        CHECK(cursorStepAfterGridAdvance(0, 16) == 0);
+        CHECK(cursorStepAfterGridAdvance(15, 16) == 15);
+        CHECK(cursorStepAfterGridAdvance(16, 16) == 0);
+    }
+
     printf("%ld checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;
 }

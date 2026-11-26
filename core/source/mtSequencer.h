@@ -846,7 +846,7 @@ class Sequencer
     void setSelectionMicromoveByPad(int16_t pad);
     void changeSelectionVolume(int16_t value);
     void setSelectionVolumeByPad(int16_t pad);
-    void setSelectionInstrument(int16_t value);
+    void setSelectionInstrument(int16_t value, bool advanceCursor = false);
     void setSelectionNote(int16_t value);
 
     void setStepRepeater(uint8_t track, int8_t stepRepeat);
@@ -1062,9 +1062,13 @@ class Sequencer
     void quantizeNoteOn(uint8_t track, uint8_t& destStep, int8_t& micromove, uint8_t& fwdSteps);
 
   public:
-    // Step Quantize (manual note entry). stepQuantizeTarget() is repeatable for one cursor position (chords call it
-    // once per track); the cursor moves to the next grid position when the editor calls takeStepQuantizeAdvance().
-    bool stepQuantizeTarget(uint8_t track, uint8_t cursorStep, uint8_t& destStep, int8_t& micromove);
+    // Step Quantize target for manual note/instrument entry. The cursor moves to the next grid position
+    // when the editor calls takeStepQuantizeAdvance(); popup placement can opt out of remembering it.
+    bool stepQuantizeTarget(uint8_t track,
+                            uint8_t cursorStep,
+                            uint8_t& destStep,
+                            int8_t& micromove,
+                            bool rememberAdvance = true);
     bool takeStepQuantizeAdvance(uint8_t& cursorStep);
     void cancelStepQuantizeAdvance();
     void invalidateStepQuantizePosition(); // the cursor was moved by something other than a quantized note
@@ -1073,7 +1077,7 @@ class Sequencer
     struct strStepQuantize
     {
         quantizeGrid::RememberedPosition remembered; // exact grid position the cursor stands on
-        bool pending = false; // a note was placed; nextPos is where the cursor goes next
+        bool pending = false; // a quantized entry was placed; nextPos is where the cursor goes next
         int32_t nextPos = 0;
         int32_t interval = 0; // grid nextPos belongs to
         int32_t total = 0;

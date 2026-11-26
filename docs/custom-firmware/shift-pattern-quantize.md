@@ -7,8 +7,7 @@ Works with or without `MOD_PATTERN_BPM`.
 **Verification status (by revision):**
 - Earlier revision `99791d5`: compiled and linked without errors (Original, Tracker+, Mini with the flag on; Tracker+ with the flag
   combinations listed in PR #7) and the host tests passed. This predates the changes below.
-- Later commits (enabled by default, the Step Quantize stale-position fix, the cursor-invalidation hooks and the undo/redo
-  invalidation) have **not been compiled or tested by Claude**; building and testing them is pending maintainer review.
+- The combined cursor-advancement and Instrument-slot placement changes require validation on this integration branch.
 - Never tested on hardware or in an emulator.
 
 ## Source files
@@ -73,24 +72,42 @@ Note Off and Quantize stay editable. Labels are abbreviated because the column i
   (Strength applies to live recording only); the cursor then advances to the step holding the next grid position instead of by
   Step Jump (wraps at the pattern end). The exact next position is remembered so that grids not aligned to steps stay exact.
   Covers pad/keyboard entry in the editor, the note popup commit and MIDI-keyboard entry in edit mode (chords use the same
-  target on every track). Non-note entry (instrument, FX, volume, paste) is unchanged. An occupied target step is never
-  overwritten (the note is discarded, the cursor still advances).
+  target on every track). An occupied note destination follows ordinary manual note overwrite behavior.
+* **Step Quantize (instrument placement):** setting an instrument on a single pattern step through the Instrument pad or
+  instrument popup uses the same grid destination in step entry; the Instrument column is changed there without clearing
+  unrelated note/FX data. Pad entry advances the cursor through the pending grid position; popup confirmation quantizes
+  placement but does not itself advance the cursor. If selecting a sample instrument creates a default note on an empty
+  step, that new note receives the grid micromove; an existing note's micromove is preserved. In realtime recording,
+  Instrument-pad events create a note and therefore follow the same Live Record Quantize path as ordinary realtime
+  note-on events, including the Quantize toggle and Strength setting. Step Quantize does not override Live Record Quantize
+  for these events. When Live Record Quantize is Off, the existing non-quantized recording/microtiming path applies.
+  Existing recording destination eligibility rules remain in force.
+* **Step Quantize (Step Jump precedence):** whenever an editor action would normally advance the cursor by Step Jump, an
+  effective Step Quantize grid determines the next cursor position instead. If note entry already created a pending grid
+  advance, that exact advance is consumed; otherwise the next grid position is calculated from the current cursor. This
+  covers Delete (for every edit parameter), Mini Middle, pad-based note/instrument/FX/volume/micromove edits, one-line
+  parallel-selection advancement, and incoming USB/JACK MIDI note-off cursor advancement. Paste is explicitly excluded:
+  it retains its normal Step Jump and selection-height cursor advancement, regardless of Step Quantize. Step Quantize Off
+  or Bypass preserves ordinary Step Jump for the covered actions. Non-note data placement and pasted content are not
+  quantized.
+* **Other non-note entry:** FX and volume content placement are unchanged; cursor advancement for actions that use Step Jump
+  is governed by Step Quantize, except paste, which retains its complete stock cursor-advance behavior. Instrument-slot
+  placement in step entry is the explicit performance-like exception described above.
 * **Bypass:** effective-value override only (`quantizeSettings::effective*`); stored values are never rewritten.
 * **Persistence:** none. Runtime state, reset on project load/reload and at power-up. No file-format change.
 * Existing pattern data, playback timing, BPM, pattern length and step duration are untouched.
 
 ## Deviations / decisions to review
 
-* Occupied-destination rule is "discard the incoming write" (Addendum 1) for both recording and Step Quantize.
+* Live recording retains its occupied-destination discard behavior. Manual Step Quantize note entry follows ordinary overwrite behavior at the snapped destination (PR #17).
 * Labels abbreviated ("Step Quant", "Division", "Strength", "Quarter Len") for the 100 px column.
-* Step Quantize never overwrites an existing note, so retyping a note on an occupied target step does nothing under Step Quantize.
 * Wrap-around of the category list is left as in Pattern Settings (the category button wraps; Up/Down clamp).
 
 ## Tests
 
-* Host (`g++ -std=c++17 -Wall -Icore/source tests/host/test_quantizeGrid.cpp` and `test_stepQuantize.cpp`): grid math and the
-  Step Quantize cursor chain over all divisions, Q = 4..16 and many pattern lengths.
-* Firmware builds: see the PR description (compile/link only).
+* Host regression tests cover grid math, the Step Quantize cursor chain, and Live Record Quantize strength projection.
+  The host test executables have **not yet been run** for this combined integration revision.
+* Firmware build for the combined integration branch is in progress; see the PR checks for its current result.
 * **Not performed:** hardware, emulator, UI rendering, real MIDI/pad recording.
 
 ## Limitations
