@@ -2709,9 +2709,14 @@ void Sequencer::quantizeNoteOn(uint8_t track, uint8_t& destStep, int8_t& micromo
 // nearest to the cursor step (ties forward); after a note the cursor stands on the step that holds the next grid
 // position, whose exact position is remembered in stepQuant (the integer cursor alone cannot tell, e.g. 1/16
 // with Quarter Note Length 5). Full strength; Strength only applies to live recording.
-bool Sequencer::stepQuantizeTarget(uint8_t track, uint8_t cursorStep, uint8_t& destStep, int8_t& micromove)
+bool Sequencer::stepQuantizeTarget(uint8_t track,
+                                   uint8_t cursorStep,
+                                   uint8_t& destStep,
+                                   int8_t& micromove,
+                                   bool allowRecording)
 {
-    if (!quantizeSettings::effectiveStepQuantize() || !isEditMode())
+    const bool recordingTarget = allowRecording && isRec();
+    if (!quantizeSettings::effectiveStepQuantize() || (!isEditMode() && !recordingTarget))
     {
         return false;
     }
@@ -2720,7 +2725,18 @@ bool Sequencer::stepQuantizeTarget(uint8_t track, uint8_t cursorStep, uint8_t& d
     const int32_t interval = quantizeSettings::effectiveInterval();
 
     int32_t p;
-    if (stepQuant.remembered.usableAt(cursorStep, interval, total))
+    if (recordingTarget)
+    {
+        // Live instrument-pad edits follow the actual incoming position, not the editor cursor's remembered chain.
+        const int32_t u = player.track[track].uStep < 1 ? 1 : player.track[track].uStep;
+        p = quantizeGrid::positionFromPlayer(player.track[track].actual_pos, u);
+        if (p < 0 || p >= total)
+        {
+            p = total - 1;
+        }
+        p = quantizeGrid::nearest(p, interval, total).wrapped;
+    }
+    else if (stepQuant.remembered.usableAt(cursorStep, interval, total))
     {
         p = stepQuant.remembered.pos;
     }
