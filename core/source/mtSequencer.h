@@ -1077,7 +1077,7 @@ class Sequencer
     struct strStepQuantize
     {
         quantizeGrid::RememberedPosition remembered; // exact grid position the cursor stands on
-        bool pending = false; // a note was placed; nextPos is where the cursor goes next
+        bool pending = false; // a quantized entry was placed; nextPos is where the cursor goes next
         int32_t nextPos = 0;
         int32_t interval = 0; // grid nextPos belongs to
         int32_t total = 0;
