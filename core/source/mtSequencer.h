@@ -846,7 +846,7 @@ class Sequencer
     void setSelectionMicromoveByPad(int16_t pad);
     void changeSelectionVolume(int16_t value);
     void setSelectionVolumeByPad(int16_t pad);
-    void setSelectionInstrument(int16_t value);
+    void setSelectionInstrument(int16_t value, bool advanceCursor = false);
     void setSelectionNote(int16_t value);
 
     void setStepRepeater(uint8_t track, int8_t stepRepeat);
@@ -1062,9 +1062,14 @@ class Sequencer
     void quantizeNoteOn(uint8_t track, uint8_t& destStep, int8_t& micromove, uint8_t& fwdSteps);
 
   public:
-    // Step Quantize (manual note entry). stepQuantizeTarget() is repeatable for one cursor position (chords call it
-    // once per track); the cursor moves to the next grid position when the editor calls takeStepQuantizeAdvance().
-    bool stepQuantizeTarget(uint8_t track, uint8_t cursorStep, uint8_t& destStep, int8_t& micromove);
+    // Step Quantize target for manual entry; allowRecording uses the live physical position for instrument-pad recording.
+    // The cursor moves to the next grid position when the editor calls takeStepQuantizeAdvance().
+    bool stepQuantizeTarget(uint8_t track,
+                            uint8_t cursorStep,
+                            uint8_t& destStep,
+                            int8_t& micromove,
+                            bool allowRecording = false,
+                            bool rememberAdvance = true);
     bool takeStepQuantizeAdvance(uint8_t& cursorStep);
     void cancelStepQuantizeAdvance();
     void invalidateStepQuantizePosition(); // the cursor was moved by something other than a quantized note
