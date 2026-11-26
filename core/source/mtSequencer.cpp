@@ -2713,7 +2713,8 @@ bool Sequencer::stepQuantizeTarget(uint8_t track,
                                    uint8_t cursorStep,
                                    uint8_t& destStep,
                                    int8_t& micromove,
-                                   bool allowRecording)
+                                   bool allowRecording,
+                                   bool rememberAdvance)
 {
     const bool recordingTarget = allowRecording && isRec();
     if (!quantizeSettings::effectiveStepQuantize() || (!isEditMode() && !recordingTarget))
@@ -2747,10 +2748,13 @@ bool Sequencer::stepQuantizeTarget(uint8_t track,
 
     destStep = (uint8_t)quantizeGrid::stepOf(p);
     micromove = quantizeGrid::micromoveForOffset(quantizeGrid::offsetOf(p));
-    stepQuant.nextPos = quantizeGrid::next(p, interval, total);
-    stepQuant.interval = interval;
-    stepQuant.total = total;
-    stepQuant.pending = true;
+    if (rememberAdvance)
+    {
+        stepQuant.nextPos = quantizeGrid::next(p, interval, total);
+        stepQuant.interval = interval;
+        stepQuant.total = total;
+        stepQuant.pending = true;
+    }
     return true;
 }
 
@@ -2905,6 +2909,16 @@ AUDIO_CORE_FLASH void Sequencer::handleNoteOn(
             }
         }
 
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+        // Clear stale editor state for this live event. Only the first eligible armed track may
+        // establish the cursor's pending advance; other armed tracks still quantize their own writes.
+        bool stepQuantizeAdvanceCaptured = false;
+        if (padInstrumentEdit && !isAnticipatedBeat1 && quantizeSettings::effectiveStepQuantize())
+        {
+            cancelStepQuantizeAdvance();
+        }
+#endif
+
         for (int tr = startTrack; tr < endTrack; tr++)
         {
             uint8_t destinationStep = isAnticipatedBeat1 ? 0 : getDestRecordingStep(tr, !recMicrotiming());
@@ -2933,10 +2947,12 @@ AUDIO_CORE_FLASH void Sequencer::handleNoteOn(
                                        destinationStep,
                                        quantizedDestination,
                                        stepQuantizedInstrumentMicromove,
-                                       true))
+                                       true,
+                                       !stepQuantizeAdvanceCaptured))
                 {
                     destinationStep = quantizedDestination;
                     stepQuantizedInstrument = true;
+                    stepQuantizeAdvanceCaptured = true;
                 }
             }
 #endif
