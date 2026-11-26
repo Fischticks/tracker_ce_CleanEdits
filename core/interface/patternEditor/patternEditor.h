@@ -54,7 +54,7 @@ class cPatternEditor : public ModuleBase
 
     void focusOnActual();
     void moveCursorByStep();
-    void moveCursorByStep(uint8_t);
+    void moveCursorByStep(uint8_t, bool useStepQuantize = true);
     void moveCursorByStepParallel();
 
     void refreshPatternFromOutsideModule();
