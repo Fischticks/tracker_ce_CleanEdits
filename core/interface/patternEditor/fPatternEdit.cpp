@@ -1028,11 +1028,11 @@ void cPatternEditor::moveCursorByStep()
     moveCursorByStep(0);
 }
 
-void cPatternEditor::moveCursorByStep(uint8_t val)
+void cPatternEditor::moveCursorByStep(uint8_t val, bool useStepQuantize)
 {
 #ifdef MOD_SHIFT_PATTERN_QUANTIZE
     uint8_t gridStep;
-    if (takeOrCreateStepQuantizeAdvance(gridStep))
+    if (useStepQuantize && takeOrCreateStepQuantizeAdvance(gridStep))
     {
         // `val` is paste's selection-height offset, not Step Jump; keep it after the grid advance.
         const int16_t patternLength = sequencer.getPatternToUI()->track[0].length;
@@ -3231,7 +3231,8 @@ static void functCopyPaste(uint8_t state)
             {
                 sendPasteSelection();
                 sequencer.pasteFromBuffer(getSelectedElement());
-                PTE->moveCursorByStep(sequencer.getCopySelectionHeight() - 1);
+                // Paste keeps its stock Step Jump + selection-height cursor advancement.
+                PTE->moveCursorByStep(sequencer.getCopySelectionHeight() - 1, false);
 
                 newFileManager.setActualPatternStructChanged();
             }
