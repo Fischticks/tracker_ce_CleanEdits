@@ -1114,6 +1114,7 @@ void cPatternEditor::moveCursorByStepParallel()
     PTE->trackerPattern.selectColumn = 0;
     PTE->isSelectingNow = 0;
 }
+
 void cPatternEditor::cancelPopups()
 {
     uint8_t popup_type = mtPopups.getStepPopupState();
