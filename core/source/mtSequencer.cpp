@@ -2706,18 +2706,15 @@ void Sequencer::quantizeNoteOn(uint8_t track, uint8_t& destStep, int8_t& micromo
 }
 
 // Step Quantize: manual note/instrument entry snaps to the grid position nearest the cursor step (ties forward).
-// Instrument-pad recording can opt in to use the incoming physical position instead. The exact next grid position is
-// remembered in stepQuant so divisions not aligned to physical steps remain exact. Step Quantize uses full strength;
-// the Strength control applies to ordinary Live Record Quantize.
+// The exact next grid position is remembered in stepQuant so divisions not aligned to physical steps remain exact.
+// Step Quantize uses full strength; the Strength control applies to ordinary Live Record Quantize.
 bool Sequencer::stepQuantizeTarget(uint8_t track,
                                    uint8_t cursorStep,
                                    uint8_t& destStep,
                                    int8_t& micromove,
-                                   bool allowRecording,
                                    bool rememberAdvance)
 {
-    const bool recordingTarget = allowRecording && isRec();
-    if (!quantizeSettings::effectiveStepQuantize() || (!isEditMode() && !recordingTarget))
+    if (!quantizeSettings::effectiveStepQuantize() || !isEditMode())
     {
         return false;
     }
@@ -2726,18 +2723,7 @@ bool Sequencer::stepQuantizeTarget(uint8_t track,
     const int32_t interval = quantizeSettings::effectiveInterval();
 
     int32_t p;
-    if (recordingTarget)
-    {
-        // Live instrument-pad edits follow the actual incoming position, not the editor cursor's remembered chain.
-        const int32_t u = player.track[track].uStep < 1 ? 1 : player.track[track].uStep;
-        p = quantizeGrid::positionFromPlayer(player.track[track].actual_pos, u);
-        if (p < 0 || p >= total)
-        {
-            p = total - 1;
-        }
-        p = quantizeGrid::nearest(p, interval, total).wrapped;
-    }
-    else if (stepQuant.remembered.usableAt(cursorStep, interval, total))
+    if (stepQuant.remembered.usableAt(cursorStep, interval, total))
     {
         p = stepQuant.remembered.pos;
     }
