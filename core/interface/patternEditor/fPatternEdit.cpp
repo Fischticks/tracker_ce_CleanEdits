@@ -1007,6 +1007,7 @@ static bool takeOrCreateStepQuantizeAdvance(uint8_t& cursorStep)
         return true;
     }
 
+    // Populate the sequencer's pending grid advance even when this action did not place a note.
     uint8_t targetStep = 0;
     int8_t targetMicromove = -1;
     if (!sequencer.stepQuantizeTarget(PTE->trackerPattern.actualTrack,
@@ -1033,6 +1034,7 @@ void cPatternEditor::moveCursorByStep(uint8_t val)
     uint8_t gridStep;
     if (takeOrCreateStepQuantizeAdvance(gridStep))
     {
+        // `val` is paste's selection-height offset, not Step Jump; keep it after the grid advance.
         const int16_t patternLength = sequencer.getPatternToUI()->track[0].length;
         trackerPattern.actualStep = static_cast<uint8_t>(
           quantizeGrid::cursorStepAfterGridAdvance(gridStep, val, patternLength + 1));
