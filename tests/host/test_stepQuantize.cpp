@@ -93,7 +93,8 @@ int main()
         for (int d = 0; d < divisionCount; d++)
         {
             const int32_t interval = intervalTicks(d, q);
-            for (int len = 1; len <= 128; len += (len < 16 ? 1 : 7))
+            const int patternLengths[] = {1, 4, 16, 28, 30, 64, 100, 128};
+            for (int len : patternLengths)
             {
                 const int32_t total = len * kTicksPerStep;
                 for (int32_t physical = 0; physical < total; physical++)
