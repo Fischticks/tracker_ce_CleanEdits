@@ -1194,7 +1194,7 @@ void Sequencer::changeSelectionInstrument(int16_t value)
         }
     }
 }
-void Sequencer::setSelectionInstrument(int16_t value)
+void Sequencer::setSelectionInstrument(int16_t value, bool advanceCursor)
 {
     assert(value < kTotalInstrumentsCount);
 
@@ -1213,7 +1213,9 @@ void Sequencer::setSelectionInstrument(int16_t value)
         if (stepQuantizeTarget(sel->firstTrack,
                                sel->firstStep,
                                quantizedStep,
-                               quantizedMicromove))
+                               quantizedMicromove,
+                               false,
+                               advanceCursor))
         {
             stepQuantizedMicromove = quantizedMicromove;
             sel->firstStep = sel->lastStep = quantizedStep;
