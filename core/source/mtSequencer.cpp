@@ -3000,7 +3000,11 @@ AUDIO_CORE_FLASH void Sequencer::handleNoteOn(
                     player.track[tr].recNoteOnStepIdx = destinationStep;
 #ifdef MOD_SHIFT_PATTERN_QUANTIZE
                     player.track[tr].recQuantFwdSteps = quantApplied ? quantFwd : 0;
-                    if (quantApplied)
+                    if (stepQuantizedInstrument)
+                    {
+                        step->micromove = stepQuantizedInstrumentMicromove;
+                    }
+                    else if (quantApplied)
                     {
                         step->micromove = quantMicromove;
                     }
