@@ -846,7 +846,7 @@ class Sequencer
     void setSelectionMicromoveByPad(int16_t pad);
     void changeSelectionVolume(int16_t value);
     void setSelectionVolumeByPad(int16_t pad);
-    void setSelectionInstrument(int16_t value);
+    void setSelectionInstrument(int16_t value, bool advanceCursor = false);
     void setSelectionNote(int16_t value);
 
     void setStepRepeater(uint8_t track, int8_t stepRepeat);
