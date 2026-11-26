@@ -86,6 +86,44 @@ int main()
         CHECK(!r.usableAt(stepOf(p) - 1, i8t, total));
     }
 
+    // Realtime Instrument-pad Step Quantize uses the nearest grid point at full strength,
+    // independent of the Live Record Quantize Strength setting.
+    for (int q = kQuarterMin; q <= kQuarterMax; q++)
+    {
+        for (int d = 0; d < divisionCount; d++)
+        {
+            const int32_t interval = intervalTicks(d, q);
+            for (int len = 1; len <= 128; len += (len < 16 ? 1 : 7))
+            {
+                const int32_t total = len * kTicksPerStep;
+                for (int32_t physical = 0; physical < total; physical++)
+                {
+                    const Nearest target = nearest(physical, interval, total);
+                    const int32_t destination = target.wrapped;
+                    CHECK(destination >= 0 && destination < total);
+                    CHECK(destination == target.target || target.target == total);
+                    CHECK(destination % interval == 0 || destination == 0);
+                    const int32_t destinationStep = stepOf(destination);
+                    const int8_t destinationMicromove = micromoveForOffset(offsetOf(destination));
+                    CHECK(destinationStep >= 0 && destinationStep < len);
+                    CHECK(micromoveDelayTicks(destinationMicromove) == offsetOf(destination));
+                    // A full-strength Step Quantize target is exactly the nearest grid point.
+                    CHECK(applyStrength(physical, target.target, 100, total) == destination);
+                }
+            }
+        }
+    }
+    // Exact pattern-end targets wrap to step zero and retain their forward-boundary identity.
+    {
+        const int32_t total = 16 * kTicksPerStep;
+        const int32_t interval = intervalTicks(div1_16, 4);
+        const Nearest target = nearest(total - 1, interval, total);
+        CHECK(target.target == total);
+        CHECK(target.wrapped == 0);
+        CHECK(stepOf(target.wrapped) == 0);
+        CHECK(micromoveForOffset(offsetOf(target.wrapped)) == -1);
+    }
+
     printf("%ld checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;
 }
