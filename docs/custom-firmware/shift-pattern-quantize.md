@@ -79,7 +79,7 @@ Note Off and Quantize stay editable. Labels are abbreviated because the column i
   effective Step Quantize grid determines the next cursor position instead. If note entry already created a pending grid
   advance, that exact advance is consumed; otherwise the next grid position is calculated from the current cursor. This
   covers Delete (for every edit parameter), Mini Middle, pad-based note/instrument/FX/volume/micromove edits, one-line
-  parallel-selection advancement, and paste. For paste, the grid replaces only the Step Jump component; the pasted
+  parallel-selection advancement, incoming USB/JACK MIDI note-off cursor advancement, and paste. For paste, the grid replaces only the Step Jump component; the pasted
   selection-height offset is added after the grid-selected position. Step Quantize Off or Bypass preserves ordinary Step Jump.
   Non-note data placement and pasted content are not quantized; only their cursor advancement is governed by the grid.
 * **Bypass:** effective-value override only (`quantizeSettings::effective*`); stored values are never rewritten.
