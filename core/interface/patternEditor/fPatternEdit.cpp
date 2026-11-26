@@ -1030,11 +1030,14 @@ void cPatternEditor::moveCursorByStep()
 
 void cPatternEditor::moveCursorByStep(uint8_t val, bool useStepQuantize)
 {
+#ifndef MOD_SHIFT_PATTERN_QUANTIZE
+    (void)useStepQuantize;
+#endif
 #ifdef MOD_SHIFT_PATTERN_QUANTIZE
     uint8_t gridStep;
     if (useStepQuantize && takeOrCreateStepQuantizeAdvance(gridStep))
     {
-        // `val` is paste's selection-height offset, not Step Jump; keep it after the grid advance.
+        // This path is reserved for ordinary Step Jump-based editor actions; paste opts out.
         const int16_t patternLength = sequencer.getPatternToUI()->track[0].length;
         trackerPattern.actualStep = static_cast<uint8_t>(
           quantizeGrid::cursorStepAfterGridAdvance(gridStep, patternLength + 1));
