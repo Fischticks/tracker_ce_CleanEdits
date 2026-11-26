@@ -73,8 +73,16 @@ Note Off and Quantize stay editable. Labels are abbreviated because the column i
   (Strength applies to live recording only); the cursor then advances to the step holding the next grid position instead of by
   Step Jump (wraps at the pattern end). The exact next position is remembered so that grids not aligned to steps stay exact.
   Covers pad/keyboard entry in the editor, the note popup commit and MIDI-keyboard entry in edit mode (chords use the same
-  target on every track). Non-note entry (instrument, FX, volume, paste) is unchanged. An occupied target step is never
-  overwritten (the note is discarded, the cursor still advances).
+  target on every track). An occupied note destination follows ordinary manual note overwrite behavior.
+* **Step Quantize (instrument placement):** setting an instrument on a single pattern step through the Instrument pad uses
+  the same grid destination in step entry; the Instrument column is changed there without clearing unrelated note/FX data.
+  If selecting a sample instrument creates a default note on an empty step, that new note receives the grid micromove; an
+  existing note's micromove is preserved. In realtime recording, Instrument-pad events use the full-strength Step Quantize
+  grid calculated from the incoming physical position. When Step Quantize is effective, it takes precedence over Live
+  Record Quantize for that instrument-pad event; with Step Quantize Off or Bypassed, the existing Live Record Quantize
+  behavior remains unchanged. Existing recording destination eligibility rules remain in force.
+* **Other non-note entry:** FX, volume, and paste content placement are unchanged; only cursor advancement for actions that
+  use Step Jump is governed by Step Quantize.
 * **Bypass:** effective-value override only (`quantizeSettings::effective*`); stored values are never rewritten.
 * **Persistence:** none. Runtime state, reset on project load/reload and at power-up. No file-format change.
 * Existing pattern data, playback timing, BPM, pattern length and step duration are untouched.
