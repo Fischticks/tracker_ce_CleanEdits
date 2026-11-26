@@ -1214,7 +1214,6 @@ void Sequencer::setSelectionInstrument(int16_t value, bool advanceCursor)
                                sel->firstStep,
                                quantizedStep,
                                quantizedMicromove,
-                               false,
                                advanceCursor))
         {
             stepQuantizedMicromove = quantizedMicromove;
