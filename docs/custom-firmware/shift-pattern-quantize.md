@@ -78,21 +78,21 @@ Note Off and Quantize stay editable. Labels are abbreviated because the column i
   unrelated note/FX data. Pad entry advances the cursor through the pending grid position; popup confirmation quantizes
   placement but does not itself advance the cursor. If selecting a sample instrument creates a default note on an empty
   step, that new note receives the grid micromove; an existing note's micromove is preserved. In realtime recording,
-  Instrument-pad events use the full-strength Step Quantize grid calculated from the incoming physical position. When
-  Step Quantize is effective, it takes precedence over Live Record Quantize for that instrument-pad event; with Step
-  Quantize Off or Bypassed, the existing Live Record Quantize behavior remains unchanged. Each eligible armed track writes
-  to the grid destination derived from its own physical position; the cursor's pending advance is taken from the first
-  eligible armed track. Existing recording destination eligibility rules remain in force.
+  Instrument-pad events create a note and therefore follow the same Live Record Quantize path as ordinary realtime
+  note-on events, including the Quantize toggle and Strength setting. Step Quantize does not override Live Record Quantize
+  for these events. When Live Record Quantize is Off, the existing non-quantized recording/microtiming path applies.
+  Existing recording destination eligibility rules remain in force.
 * **Step Quantize (Step Jump precedence):** whenever an editor action would normally advance the cursor by Step Jump, an
   effective Step Quantize grid determines the next cursor position instead. If note entry already created a pending grid
   advance, that exact advance is consumed; otherwise the next grid position is calculated from the current cursor. This
   covers Delete (for every edit parameter), Mini Middle, pad-based note/instrument/FX/volume/micromove edits, one-line
-  parallel-selection advancement, incoming USB/JACK MIDI note-off cursor advancement, and paste. For paste, the grid replaces
-  only the Step Jump component; the pasted selection-height offset is added after the grid-selected position. Step Quantize
-  Off or Bypass preserves ordinary Step Jump. Non-note data placement and pasted content are not quantized; only their
-  cursor advancement is governed by the grid.
-* **Other non-note entry:** FX, volume, and paste content placement are unchanged; only cursor advancement for actions that
-  use Step Jump is governed by Step Quantize. Instrument-slot placement is the explicit performance-like exception described above.
+  parallel-selection advancement, and incoming USB/JACK MIDI note-off cursor advancement. Paste is explicitly excluded:
+  it retains its normal Step Jump and selection-height cursor advancement, regardless of Step Quantize. Step Quantize Off
+  or Bypass preserves ordinary Step Jump for the covered actions. Non-note data placement and pasted content are not
+  quantized.
+* **Other non-note entry:** FX and volume content placement are unchanged; cursor advancement for actions that use Step Jump
+  is governed by Step Quantize, except paste, which retains its complete stock cursor-advance behavior. Instrument-slot
+  placement in step entry is the explicit performance-like exception described above.
 * **Bypass:** effective-value override only (`quantizeSettings::effective*`); stored values are never rewritten.
 * **Persistence:** none. Runtime state, reset on project load/reload and at power-up. No file-format change.
 * Existing pattern data, playback timing, BPM, pattern length and step duration are untouched.
