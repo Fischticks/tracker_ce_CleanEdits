@@ -1037,7 +1037,7 @@ void cPatternEditor::moveCursorByStep(uint8_t val, bool useStepQuantize)
         // `val` is paste's selection-height offset, not Step Jump; keep it after the grid advance.
         const int16_t patternLength = sequencer.getPatternToUI()->track[0].length;
         trackerPattern.actualStep = static_cast<uint8_t>(
-          quantizeGrid::cursorStepAfterGridAdvance(gridStep, val, patternLength + 1));
+          quantizeGrid::cursorStepAfterGridAdvance(gridStep, patternLength + 1));
 
         PTE->trackerPattern.selectState = 1;
         PTE->trackerPattern.selectColumn = 0;
@@ -1083,7 +1083,7 @@ void cPatternEditor::moveCursorByStepParallel()
     {
         const int16_t patternLength = sequencer.getPatternToUI()->track[0].length;
         trackerPattern.actualStep = static_cast<uint8_t>(
-          quantizeGrid::cursorStepAfterGridAdvance(gridStep, 0, patternLength + 1));
+          quantizeGrid::cursorStepAfterGridAdvance(gridStep, patternLength + 1));
         PTE->trackerPattern.selectStartStep = trackerPattern.actualStep;
         PTE->trackerPattern.selectEndStep = trackerPattern.actualStep;
         PTE->trackerPattern.selectState = 2;
