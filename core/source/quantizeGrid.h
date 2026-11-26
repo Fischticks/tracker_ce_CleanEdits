@@ -113,6 +113,7 @@ inline int32_t stepOf(int32_t p)
 {
     return p / kTicksPerStep;
 }
+// Convert the next grid position to the integer cursor step, then apply an optional post-grid offset (paste height).
 inline int32_t cursorStepAfterGridAdvance(int32_t nextGridStep, int32_t extraSteps, int32_t patternSteps)
 {
     if (patternSteps <= 0)
