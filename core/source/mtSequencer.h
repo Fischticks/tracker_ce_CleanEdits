@@ -1062,13 +1062,12 @@ class Sequencer
     void quantizeNoteOn(uint8_t track, uint8_t& destStep, int8_t& micromove, uint8_t& fwdSteps);
 
   public:
-    // Step Quantize target for manual entry; allowRecording uses the live physical position for instrument-pad recording.
-    // The cursor moves to the next grid position when the editor calls takeStepQuantizeAdvance().
+    // Step Quantize target for manual note/instrument entry. The cursor moves to the next grid position
+    // when the editor calls takeStepQuantizeAdvance(); popup placement can opt out of remembering it.
     bool stepQuantizeTarget(uint8_t track,
                             uint8_t cursorStep,
                             uint8_t& destStep,
                             int8_t& micromove,
-                            bool allowRecording = false,
                             bool rememberAdvance = true);
     bool takeStepQuantizeAdvance(uint8_t& cursorStep);
     void cancelStepQuantizeAdvance();
