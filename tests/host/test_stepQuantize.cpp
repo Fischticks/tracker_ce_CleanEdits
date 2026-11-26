@@ -125,25 +125,19 @@ int main()
         CHECK(micromoveForOffset(offsetOf(target.wrapped)) == -1);
     }
 
-    // Cursor advancement uses the next grid step instead of Step Jump. Paste adds its
-    // selection-height offset after the grid-selected step, wrapping across the pattern.
+    // Step Quantize cursor projection for actions that normally use Step Jump.
+    // Paste is deliberately excluded and retains its stock cursor advancement.
     {
         for (int patternSteps = 1; patternSteps <= 128; patternSteps++)
         {
             for (int gridStep = 0; gridStep < patternSteps; gridStep++)
             {
-                for (int pasteHeightOffset = 0; pasteHeightOffset <= patternSteps + 2;
-                     pasteHeightOffset++)
-                {
-                    const int expected = (gridStep + pasteHeightOffset) % patternSteps;
-                    CHECK(cursorStepAfterGridAdvance(gridStep, pasteHeightOffset, patternSteps) ==
-                          expected);
-                }
+                CHECK(cursorStepAfterGridAdvance(gridStep, 0, patternSteps) == gridStep);
             }
         }
         CHECK(cursorStepAfterGridAdvance(7, 0, 0) == 0);
         CHECK(cursorStepAfterGridAdvance(0, 0, 16) == 0);
-        CHECK(cursorStepAfterGridAdvance(15, 1, 16) == 0);
+        CHECK(cursorStepAfterGridAdvance(15, 0, 16) == 15);
     }
 
     printf("%ld checks, %d failures\n", checks, failures);
