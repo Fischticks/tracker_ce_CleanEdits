@@ -1068,7 +1068,8 @@ class Sequencer
                             uint8_t cursorStep,
                             uint8_t& destStep,
                             int8_t& micromove,
-                            bool allowRecording = false);
+                            bool allowRecording = false,
+                            bool rememberAdvance = true);
     bool takeStepQuantizeAdvance(uint8_t& cursorStep);
     void cancelStepQuantizeAdvance();
     void invalidateStepQuantizePosition(); // the cursor was moved by something other than a quantized note
