@@ -86,8 +86,8 @@ int main()
         CHECK(!r.usableAt(stepOf(p) - 1, i8t, total));
     }
 
-    // Realtime Instrument-pad Step Quantize uses the nearest grid point at full strength,
-    // independent of the Live Record Quantize Strength setting.
+    // Live Record Quantize applies the configured Strength toward the nearest grid point.
+    // Instrument-pad recording uses this same shared path as ordinary realtime note-on events.
     for (int q = kQuarterMin; q <= kQuarterMax; q++)
     {
         for (int d = 0; d < divisionCount; d++)
@@ -100,16 +100,14 @@ int main()
                 for (int32_t physical = 0; physical < total; physical++)
                 {
                     const Nearest target = nearest(physical, interval, total);
-                    const int32_t destination = target.wrapped;
-                    CHECK(destination >= 0 && destination < total);
-                    CHECK(destination == target.target || target.target == total);
-                    CHECK(destination % interval == 0 || destination == 0);
-                    const int32_t destinationStep = stepOf(destination);
-                    const int8_t destinationMicromove = micromoveForOffset(offsetOf(destination));
-                    CHECK(destinationStep >= 0 && destinationStep < len);
-                    CHECK(micromoveDelayTicks(destinationMicromove) == offsetOf(destination));
-                    // A full-strength Step Quantize target is exactly the nearest grid point.
-                    CHECK(applyStrength(physical, target.target, 100, total) == destination);
+                    const int32_t atZero = applyStrength(physical, target.target, 0, total);
+                    const int32_t atHalf = applyStrength(physical, target.target, 50, total);
+                    const int32_t atFull = applyStrength(physical, target.target, 100, total);
+                    CHECK(atZero == physical);
+                    CHECK(atZero >= 0 && atZero < total);
+                    CHECK(atHalf >= 0 && atHalf < total);
+                    CHECK(atFull == target.wrapped);
+                    CHECK(atFull >= 0 && atFull < total);
                 }
             }
         }
@@ -132,12 +130,13 @@ int main()
         {
             for (int gridStep = 0; gridStep < patternSteps; gridStep++)
             {
-                CHECK(cursorStepAfterGridAdvance(gridStep, 0, patternSteps) == gridStep);
+                CHECK(cursorStepAfterGridAdvance(gridStep, patternSteps) == gridStep);
             }
         }
-        CHECK(cursorStepAfterGridAdvance(7, 0, 0) == 0);
-        CHECK(cursorStepAfterGridAdvance(0, 0, 16) == 0);
-        CHECK(cursorStepAfterGridAdvance(15, 0, 16) == 15);
+        CHECK(cursorStepAfterGridAdvance(7, 0) == 0);
+        CHECK(cursorStepAfterGridAdvance(0, 16) == 0);
+        CHECK(cursorStepAfterGridAdvance(15, 16) == 15);
+        CHECK(cursorStepAfterGridAdvance(16, 16) == 0);
     }
 
     printf("%ld checks, %d failures\n", checks, failures);
