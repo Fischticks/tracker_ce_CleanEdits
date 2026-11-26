@@ -999,26 +999,49 @@ void cPatternEditor::focusOnActual()
       clamp<int8_t>(trackerPattern.firstVisibleTrack, 0, kAllTracks - columnCounts);
 }
 
+#ifdef MOD_SHIFT_PATTERN_QUANTIZE
+static bool takeOrCreateStepQuantizeAdvance(uint8_t& cursorStep)
+{
+    if (sequencer.takeStepQuantizeAdvance(cursorStep))
+    {
+        return true;
+    }
+
+    uint8_t targetStep = 0;
+    int8_t targetMicromove = -1;
+    if (!sequencer.stepQuantizeTarget(PTE->trackerPattern.actualTrack,
+                                      PTE->trackerPattern.actualStep,
+                                      targetStep,
+                                      targetMicromove))
+    {
+        return false;
+    }
+
+    return sequencer.takeStepQuantizeAdvance(cursorStep);
+}
+#endif
+
 void cPatternEditor::moveCursorByStep()
 {
-#ifdef MOD_SHIFT_PATTERN_QUANTIZE
-    // Step Quantize: after a quantized note the cursor goes to the next grid position instead of by Step Jump.
-    uint8_t gridStep;
-    if (sequencer.takeStepQuantizeAdvance(gridStep))
-    {
-        trackerPattern.actualStep = gridStep;
-        PTE->trackerPattern.selectState = 1;
-        PTE->trackerPattern.selectColumn = 0;
-        PTE->isSelectingNow = 0;
-        return;
-    }
-#endif
+    // The shared path also creates a grid advance when this action did not place a note.
     moveCursorByStep(0);
 }
 
 void cPatternEditor::moveCursorByStep(uint8_t val)
 {
 #ifdef MOD_SHIFT_PATTERN_QUANTIZE
+    uint8_t gridStep;
+    if (takeOrCreateStepQuantizeAdvance(gridStep))
+    {
+        const int16_t patternLength = sequencer.getPatternToUI()->track[0].length;
+        trackerPattern.actualStep = static_cast<uint8_t>(
+          quantizeGrid::cursorStepAfterGridAdvance(gridStep, val, patternLength + 1));
+
+        PTE->trackerPattern.selectState = 1;
+        PTE->trackerPattern.selectColumn = 0;
+        PTE->isSelectingNow = 0;
+        return;
+    }
     sequencer.invalidateStepQuantizePosition();
 #endif
     if (mtProject.values.patternEditStep + val <= 0)
@@ -1054,9 +1077,11 @@ void cPatternEditor::moveCursorByStepParallel()
 
 #ifdef MOD_SHIFT_PATTERN_QUANTIZE
     uint8_t gridStep;
-    if (sequencer.takeStepQuantizeAdvance(gridStep))
+    if (takeOrCreateStepQuantizeAdvance(gridStep))
     {
-        trackerPattern.actualStep = gridStep;
+        const int16_t patternLength = sequencer.getPatternToUI()->track[0].length;
+        trackerPattern.actualStep = static_cast<uint8_t>(
+          quantizeGrid::cursorStepAfterGridAdvance(gridStep, 0, patternLength + 1));
         PTE->trackerPattern.selectStartStep = trackerPattern.actualStep;
         PTE->trackerPattern.selectEndStep = trackerPattern.actualStep;
         PTE->trackerPattern.selectState = 2;
@@ -1087,7 +1112,6 @@ void cPatternEditor::moveCursorByStepParallel()
     PTE->trackerPattern.selectColumn = 0;
     PTE->isSelectingNow = 0;
 }
-
 void cPatternEditor::cancelPopups()
 {
     uint8_t popup_type = mtPopups.getStepPopupState();
