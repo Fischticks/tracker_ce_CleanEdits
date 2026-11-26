@@ -2926,7 +2926,7 @@ AUDIO_CORE_FLASH void Sequencer::handleNoteOn(
                 quantApplied = true;
             }
 
-            if (useStepQuantizeForInstrument)
+            if (useStepQuantizeForInstrument && isRecArmedOnTrack(tr))
             {
                 uint8_t quantizedDestination = destinationStep;
                 if (stepQuantizeTarget(tr,
